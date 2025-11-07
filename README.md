@@ -128,3 +128,38 @@ Yes. Prepare the Docker images and models ahead of time, copy the repository + v
 ## 📄 License / Attribution
 
 Internal use for BEIT project partners. Built with ❤️ by the ITC Iraq team.
+
+## Building Installers
+
+### Automated Builds (Recommended)
+
+The app is configured with GitHub Actions to automatically build installers for both Mac and Windows:
+
+1. Push changes to the `main` or `develop` branch
+2. GitHub Actions will automatically build both Mac and Windows installers
+3. Download the installers from the Actions tab → Click on the workflow run → Scroll to "Artifacts"
+
+**Artifacts produced:**
+- `mac-installers/` - Contains `.dmg` and `.zip` for macOS
+- `windows-installers/` - Contains `.exe` setup and portable versions
+
+### Manual Local Builds
+
+**For Mac (on macOS):**
+```bash
+npm run electron:build:mac
+```
+
+**For Windows (on Windows or using VM):**
+```bash
+npm run electron:build:win
+```
+
+**Note:** Cross-platform builds from Mac to Windows have limitations due to native modules. Use GitHub Actions for cross-platform builds.
+
+### Installer Locations
+
+After building, installers will be in the `dist/` folder:
+- macOS: `BEIT Knowledge Base-{version}-mac.dmg` and `.zip`
+- Windows: `BEIT Knowledge Base-{version}-setup.exe` and `-portable.exe`
+
