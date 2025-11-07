@@ -30,6 +30,8 @@ jobs:
 
       - name: Build Electron app for Mac
         run: npm run electron:build:mac
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Mac artifacts
         uses: actions/upload-artifact@v4
@@ -60,6 +62,8 @@ jobs:
 
       - name: Build Electron app for Windows
         run: npm run electron:build:win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
