@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Error - BEIT Knowledge Base</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #f5576c 0%, #e74c3c 100%);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+      padding: 40px;
+    }
+
+    .container {
+      text-align: center;
+      max-width: 600px;
+    }
+
+    .icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    p {
+      font-size: 18px;
+      opacity: 0.9;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+
+    .error-box {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 30px 0;
+      text-align: left;
+    }
+
+    .error-box h3 {
+      font-size: 16px;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    .error-box ol {
+      margin-left: 20px;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .error-box li {
+      margin-bottom: 8px;
+    }
+
+    .error-box code {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+    }
+
+    .button {
+      display: inline-block;
+      background: white;
+      color: #e74c3c;
+      padding: 12px 32px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      margin-top: 20px;
+      cursor: pointer;
+      border: none;
+      font-size: 16px;
+      transition: transform 0.2s;
+    }
+
+    .button:hover {
+      transform: scale(1.05);
+    }
+
+    .button:active {
+      transform: scale(0.95);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">⚠️</div>
+    <h1>Failed to Start Knowledge Base</h1>
+    <p>The Chroma vector database could not be started. This is usually due to missing dependencies.</p>
+
+    <div class="error-box">
+      <h3>📋 Required Setup:</h3>
+      <ol>
+        <li>
+          <strong>Install ChromaDB:</strong><br>
+          <code>pip install chromadb==1.3.4</code>
+        </li>
+        <li>
+          <strong>Install Ollama:</strong><br>
+          Download from <a href="https://ollama.ai" style="color: white;">https://ollama.ai</a>
+        </li>
+        <li>
+          <strong>Pull the embedding model:</strong><br>
+          <code>ollama pull nomic-embed-text</code>
+        </li>
+        <li>
+          <strong>Ensure Chroma is in your PATH:</strong><br>
+          Run <code>chroma --version</code> to verify
+        </li>
+      </ol>
+    </div>
+
+    <p style="font-size: 14px; opacity: 0.8;">
+      After installing the required dependencies, restart the application.
+    </p>
+
+    <button class="button" onclick="window.close()">Close Application</button>
+  </div>
+
+  <script>
+    // Listen for Chroma errors from main process
+    if (window.electron) {
+      window.electron.onChromaError((message) => {
+        console.error('Chroma error:', message);
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+[
+  {
+    "id": "meta-001",
+    "category": "project_scope",
+    "question": "How many trainer interviews were conducted in the BEIT project?",
+    "answer": "The BEIT project conducted 18 trainer interviews between October-November 2024. This included 7 Architecture experts (Ali Abkan, Anfal Yathrib, Aya Nizar Basheer, Fatima Eyad, Ghassan, Hussein Mohammed, Mohammed Al-Qatan), 6 Solar experts (Hussam Falih, Laith Abdulla, Mustafa Waleed, Muthanna Al-Mashhadani, Omar Laith, Yamama Salih), and 5 Insulation experts (Larsa Emad, Muayad Hasan, Wifaq Ahmed, plus 2 others). From these interviews, 44 critical insights were extracted covering training delivery, participant barriers, market dynamics, and curriculum recommendations.",
+    "tags": "scope, interviews, experts, count, architecture, solar, insulation"
+  },
+  {
+    "id": "meta-002",
+    "category": "curriculum_structure",
+    "question": "What modules are in the BEIT Tier 1 curriculum?",
+    "answer": "The BEIT Tier 1 curriculum consists of 3 modules: Architecture (5 days focusing on green building design, heritage analysis, client discovery, and passive design principles), Solar (5 days covering PV system design, site assessment, installation, and business models), and Insulation (5 days teaching heat transfer, thermal bridging, material selection, and energy auditing). Each module integrates technical skills with business development, client communication, and practical hands-on activities. The curriculum was designed for Mosul-based practitioners to bridge the skills gap in green building.",
+    "tags": "curriculum, modules, structure, days, architecture, solar, insulation"
+  },
+  {
+    "id": "meta-003",
+    "category": "training_approach",
+    "question": "What is the pedagogical approach of BEIT training?",
+    "answer": "BEIT training follows a 70-20-10 model: 70% hands-on practical activities (labs, site visits, real client projects), 20% peer learning and trainer feedback, and 10% theory/lecture. Each module emphasizes trust-building before technical content, uses authentic Mosul case studies, integrates bilingual delivery (Arabic primary, English technical terms), and scaffolds from basic concepts to complex problem-solving. The Training-of-Trainers (ToT) model ensures local experts can replicate this approach sustainably after the project ends.",
+    "tags": "pedagogy, training methods, hands-on, ToT, learning approach"
+  },
+  {
+    "id": "meta-004",
+    "category": "program_context",
+    "question": "What are the main barriers to green building adoption in Mosul according to BEIT research?",
+    "answer": "BEIT identified 5 critical barriers: (1) Trust deficit - clients skeptical of new technologies after years of war and fraud; (2) Upfront cost perception - materials seen as expensive despite long-term ROI; (3) Supply chain gaps - many green materials unavailable locally; (4) Skills shortage - few contractors understand proper installation; (5) Cultural resistance - traditional methods preferred over innovation. The curriculum directly addresses these through trust-framing exercises, ROI calculators, local material substitution training, and peer success stories.",
+    "tags": "barriers, adoption, Mosul, green building, challenges, trust, cost"
+  },
+  {
+    "id": "meta-005",
+    "category": "curriculum_delivery",
+    "question": "How long is each BEIT module and what is the recommended schedule?",
+    "answer": "Each BEIT module is designed for 5 consecutive training days (40 hours total). The recommended schedule is 8:30 AM - 4:30 PM with morning energizers, mid-morning breaks, lunch, and afternoon reflection time. Day 1 focuses on trust-building and fundamentals, Days 2-4 on technical skills and hands-on practice, and Day 5 on portfolio development, client pitches, and next-steps planning. Homework is assigned on Days 3-4 to reinforce learning. The modules can be delivered standalone or sequenced (Architecture → Insulation → Solar recommended for comprehensive green building practitioners).",
+    "tags": "schedule, duration, delivery, timing, structure"
+  },
+  {
+    "id": "meta-006",
+    "category": "job_placement",
+    "question": "What job placement support does BEIT provide?",
+    "answer": "BEIT includes a 3-month post-training apprenticeship program where graduates are matched with experienced contractors for on-the-job learning. The program tracks placement through monthly check-ins, provides troubleshooting support, and maintains a WhatsApp community for ongoing peer learning. Solar graduates receive additional support with supplier connections and business licensing guidance. The ToT model also creates trainer opportunities for high-performing participants who can deliver future cohorts.",
+    "tags": "job placement, apprenticeship, employment, support, career"
+  },
+  {
+    "id": "meta-007",
+    "category": "assessment",
+    "question": "How are BEIT participants assessed?",
+    "answer": "BEIT uses continuous formative assessment rather than final exams: (1) Pre/post knowledge quizzes to track learning gains; (2) Hands-on skill demonstrations during labs; (3) Portfolio projects reviewed by trainers; (4) Client pitch presentations on Day 5; (5) Homework quality for Days 3-4. Certificates are awarded based on attendance (80%+), portfolio completion, and demonstrated competency. The emphasis is on practical application over theoretical recall.",
+    "tags": "assessment, evaluation, certification, testing, competency"
+  },
+  {
+    "id": "meta-008",
+    "category": "materials_equipment",
+    "question": "What materials and equipment are needed to deliver BEIT training?",
+    "answer": "Core requirements include: (1) Hands-on lab materials (insulation samples, thermal cameras, PV panels, hand tools); (2) Excel workbooks for each participant (pre-loaded on laptops or printed); (3) Facilitator guide with scripts and transitions; (4) Visual aids (posters, videos, case study photos); (5) Venue with electricity, projector, breakout space for group work; (6) Transportation for site visits (at least 1 per module). The curriculum is designed to work with locally-available materials where possible, with substitution guidance provided for hard-to-source items.",
+    "tags": "materials, equipment, requirements, resources, logistics"
+  },
+  {
+    "id": "meta-009",
+    "category": "participant_profile",
+    "question": "Who is the target participant for BEIT training?",
+    "answer": "BEIT targets mid-career practitioners in Mosul's construction sector: architects, engineers, contractors, and skilled tradespeople with 3-10 years experience who want to upskill in green building. Ideal participants have basic math/reading skills (to use Excel calculators), own or work for a construction business, and have client-facing roles. The program welcomes women and returnees, with special outreach to underrepresented groups. No prior green building knowledge is required - the curriculum starts from foundational concepts.",
+    "tags": "participants, target audience, eligibility, profile, recruitment"
+  },
+  {
+    "id": "meta-010",
+    "category": "sustainability",
+    "question": "How will BEIT training continue after the ITC project ends?",
+    "answer": "BEIT's sustainability strategy has 3 pillars: (1) Training-of-Trainers - 12 local experts trained to independently deliver all modules; (2) Partnership with Mosul University's Engineering Department to integrate content into continuing education; (3) Private sector model - trainers can charge fees to construction companies/professional associations; (4) Open curriculum - facilitation guides and materials available under Creative Commons license. The goal is 50+ additional practitioners trained per year through this cascade model.",
+    "tags": "sustainability, ToT, future, post-project, scale, replication"
+  }
+]
