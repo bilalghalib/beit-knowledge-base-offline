@@ -106,6 +106,33 @@ export default function SettingsPanel({ isOpen, onClose, language = 'en' }: Sett
             </p>
           </div>
 
+          <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+            <div className="flex items-start gap-2">
+              <svg className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="text-xs text-amber-800">
+                <p className="font-semibold mb-1">
+                  {language === 'ar' ? 'توليد الذكاء الاصطناعي بطيء؟' : 'Slow AI generation?'}
+                </p>
+                <p>
+                  {language === 'ar'
+                    ? 'توليد الإجابات بالذكاء الاصطناعي سيكون بطيئًا جدًا على معظم أجهزة الكمبيوتر المحلية. للحصول على نتائج أسرع، أضف مفتاح OpenAI API الخاص بك أعلاه.'
+                    : 'AI answer generation will be very slow on most local computers. For faster results (5-10 seconds instead of 2-5 minutes), add your OpenAI API key above.'
+                  }
+                </p>
+                <a
+                  href="https://platform.openai.com/api-keys"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-700 underline mt-1 inline-block"
+                >
+                  {language === 'ar' ? 'احصل على مفتاح API' : 'Get an API key'}
+                </a>
+              </div>
+            </div>
+          </div>
+
           {saved && (
             <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-2 rounded-lg text-sm">
               {text.savedMessage}

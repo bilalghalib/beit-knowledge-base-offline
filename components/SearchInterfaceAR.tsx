@@ -62,6 +62,13 @@ export default function SearchInterfaceAR() {
   const [response, setResponse] = useState<SearchResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [generateLLMAnswer, setGenerateLLMAnswer] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState(false);
+
+  // Check if API key exists
+  useState(() => {
+    const key = localStorage.getItem('openai_api_key');
+    setHasApiKey(!!key);
+  });
 
   const handleSearch = async (event?: React.FormEvent) => {
     if (event) event.preventDefault();
@@ -172,7 +179,11 @@ export default function SearchInterfaceAR() {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     />
                   </svg>
-                  جاري البحث...
+                  {generateLLMAnswer && !hasApiKey
+                    ? 'جاري إنشاء إجابة الذكاء الاصطناعي (قد يستغرق 2-5 دقائق)...'
+                    : generateLLMAnswer
+                    ? 'جاري إنشاء إجابة الذكاء الاصطناعي...'
+                    : 'جاري البحث...'}
                 </>
               ) : (
                 <>
@@ -212,6 +223,25 @@ export default function SearchInterfaceAR() {
           </div>
         </div>
       </form>
+
+      {generateLLMAnswer && !hasApiKey && !loading && (
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-5" dir="rtl">
+          <div className="flex items-start gap-3">
+            <svg className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-amber-900 mb-1">توليد الذكاء الاصطناعي سيكون بطيئًا جدًا على الجهاز المحلي</p>
+              <p className="text-xs text-amber-800 mb-2">
+                بدون مفتاح OpenAI API، قد يستغرق توليد الإجابة من 2 إلى 5 دقائق حسب موارد جهازك. مع المفتاح، ستحصل على النتائج في 5-10 ثوان.
+              </p>
+              <p className="text-xs text-amber-700">
+                أضف مفتاح OpenAI API من الإعدادات (أعلى اليمين) للحصول على نتائج أسرع، أو قم بإلغاء تحديد "إنشاء إجابة الذكاء الاصطناعي" للحصول على نتائج البحث الفورية.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="mb-8 rounded-xl border border-red-200 bg-red-50 p-6 text-red-800">
