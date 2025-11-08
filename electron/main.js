@@ -126,7 +126,7 @@ function checkNextStatus() {
 }
 
 // Create main window
-function createWindow() {
+async function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
