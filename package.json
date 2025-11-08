@@ -48,6 +48,7 @@
     "directories": {
       "output": "dist"
     },
+    "asar": false,
     "files": [
       ".next/standalone/**/*",
       ".next/static/**/*",
@@ -56,11 +57,6 @@
       "data/**/*",
       "public/**/*",
       "package.json"
-    ],
-    "asarUnpack": [
-      ".next/standalone/**/*",
-      "chroma-storage/**/*",
-      "data/**/*"
     ],
     "npmRebuild": false,
     "buildDependenciesFromSource": false,
