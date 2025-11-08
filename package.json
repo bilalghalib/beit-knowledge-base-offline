@@ -1,6 +1,8 @@
 {
   "name": "beit-knowledge-base",
   "version": "0.1.0",
+  "description": "BEIT Knowledge Base - Offline AI-powered knowledge management system",
+  "author": "BEIT",
   "private": true,
   "type": "module",
   "scripts": {
@@ -58,7 +60,6 @@
       "package.json"
     ],
     "asarUnpack": [
-      ".next/standalone/**/*",
       "chroma-storage/**/*",
       "data/**/*"
     ],
