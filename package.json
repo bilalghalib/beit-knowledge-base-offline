@@ -51,17 +51,27 @@
       "output": "dist"
     },
     "files": [
-      ".next/standalone/**/*",
       ".next/static/**/*",
       "electron/**/*",
-      "chroma-storage/**/*",
-      "data/**/*",
       "public/**/*",
       "package.json"
     ],
-    "asarUnpack": [
-      "chroma-storage/**/*",
-      "data/**/*"
+    "extraResources": [
+      {
+        "from": ".next/standalone",
+        "to": ".next/standalone",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "chroma-storage",
+        "to": "chroma-storage",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "data",
+        "to": "data",
+        "filter": ["**/*"]
+      }
     ],
     "npmRebuild": false,
     "buildDependenciesFromSource": false,
