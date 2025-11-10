@@ -12,6 +12,7 @@
     "lint": "eslint",
     "seed": "node scripts/offline/seed.js",
     "precompute-embeddings": "node scripts/precompute-embeddings.js",
+    "precompute-embeddings:openai": "node scripts/precompute-embeddings-openai.js",
     "electron": "electron .",
     "electron:dev": "electron .",
     "electron:build": "npm run precompute-embeddings && npm run build && electron-builder",
