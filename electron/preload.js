@@ -6,11 +6,19 @@ contextBridge.exposeInMainWorld('electron', {
   // Check if server is running
   checkServerStatus: () => ipcRenderer.invoke('check-server-status'),
 
+  // Check if dependencies are installed
+  checkDependencies: () => ipcRenderer.invoke('check-dependencies'),
+
   // Restart server
   restartServer: () => ipcRenderer.invoke('restart-server'),
 
   // Listen for server errors
   onServerError: (callback) => {
     ipcRenderer.on('server-error', (event, message) => callback(message));
+  },
+
+  // Listen for dependency issues
+  onDependencyIssues: (callback) => {
+    ipcRenderer.on('dependency-issues', (event, issues) => callback(issues));
   },
 });

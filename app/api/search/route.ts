@@ -20,29 +20,48 @@ type UnifiedResult = {
 };
 
 async function embedText(prompt: string): Promise<number[]> {
-  const response = await fetch(`${OLLAMA_URL}/api/embeddings`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: OLLAMA_EMBED_MODEL,
-      prompt,
-    }),
-  });
+  try {
+    const response = await fetch(`${OLLAMA_URL}/api/embeddings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: OLLAMA_EMBED_MODEL,
+        prompt,
+      }),
+      signal: AbortSignal.timeout(30000), // 30 second timeout
+    });
 
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(
-      `Ollama embeddings request failed (${response.status}): ${err}`,
-    );
+    if (!response.ok) {
+      const err = await response.text();
+
+      // Check if it's a model not found error
+      if (response.status === 404 || err.includes('not found')) {
+        throw new Error(
+          `Ollama model '${OLLAMA_EMBED_MODEL}' not found. Please run: ollama pull ${OLLAMA_EMBED_MODEL}`,
+        );
+      }
+
+      throw new Error(
+        `Ollama embeddings request failed (${response.status}): ${err}`,
+      );
+    }
+
+    const data = await response.json();
+
+    if (!data.embedding) {
+      throw new Error('Ollama embeddings response did not include `embedding`.');
+    }
+
+    return data.embedding as number[];
+  } catch (error) {
+    // Check if it's a connection error
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error(
+        `Cannot connect to Ollama at ${OLLAMA_URL}. Please ensure Ollama is installed and running. Download from: https://ollama.ai`,
+      );
+    }
+    throw error;
   }
-
-  const data = await response.json();
-
-  if (!data.embedding) {
-    throw new Error('Ollama embeddings response did not include `embedding`.');
-  }
-
-  return data.embedding as number[];
 }
 
 async function generateAnswerWithOpenAI({
@@ -184,12 +203,33 @@ export async function POST(req: NextRequest) {
   try {
     const { query, generateAnswer: shouldGenerateAnswer, openaiApiKey } = await req.json();
 
+    // Validate query exists and is a string
     if (!query || typeof query !== 'string') {
       return NextResponse.json(
         { error: 'Query is required' },
         { status: 400 },
       );
     }
+
+    // Trim and validate query length
+    const trimmedQuery = query.trim();
+
+    if (trimmedQuery.length < 2) {
+      return NextResponse.json(
+        { error: 'Query must be at least 2 characters long' },
+        { status: 400 },
+      );
+    }
+
+    if (trimmedQuery.length > 1000) {
+      return NextResponse.json(
+        { error: 'Query must be less than 1000 characters' },
+        { status: 400 },
+      );
+    }
+
+    // Use trimmed query for all operations
+    const sanitizedQuery = trimmedQuery;
 
     const [insightsCollection, metadataCollection, curriculumCollection] =
       await Promise.all([
@@ -198,7 +238,7 @@ export async function POST(req: NextRequest) {
         getOrCreateCollection('curriculum'),
       ]);
 
-    const embedding = await embedText(query);
+    const embedding = await embedText(sanitizedQuery);
 
     const [insightMatches, metadataMatches, curriculumMatches] =
       await Promise.all([
@@ -247,12 +287,12 @@ export async function POST(req: NextRequest) {
         // Use OpenAI API if key is provided, otherwise fall back to Ollama
         if (openaiApiKey && typeof openaiApiKey === 'string' && openaiApiKey.trim()) {
           answer = await generateAnswerWithOpenAI({
-            question: query,
+            question: sanitizedQuery,
             context,
             apiKey: openaiApiKey.trim()
           });
         } else {
-          answer = await generateAnswer({ question: query, context });
+          answer = await generateAnswer({ question: sanitizedQuery, context });
         }
       } catch (error) {
         console.error('AI answer generation failed:', error);
@@ -324,8 +364,34 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error('Offline search error:', error);
+
+    // Provide user-friendly error messages
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+
+    // Check for specific error patterns and provide helpful guidance
+    if (errorMessage.includes('Ollama') || errorMessage.includes('OLLAMA_URL')) {
+      return NextResponse.json(
+        {
+          error: errorMessage,
+          helpText: 'Ollama is required for search. Please install it from https://ollama.ai'
+        },
+        { status: 503 }, // Service Unavailable
+      );
+    }
+
+    if (errorMessage.includes('ChromaDB') || errorMessage.includes('CHROMA_URL')) {
+      return NextResponse.json(
+        {
+          error: errorMessage,
+          helpText: 'ChromaDB is required for search. Please run start.bat (Windows) or start.sh (Mac/Linux)'
+        },
+        { status: 503 },
+      );
+    }
+
+    // Generic error
     return NextResponse.json(
-      { error: 'Failed to process question' },
+      { error: 'Failed to process question', details: errorMessage },
       { status: 500 },
     );
   }

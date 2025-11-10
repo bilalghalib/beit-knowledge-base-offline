@@ -21,8 +21,9 @@ A fully offline RAG (Retrieval Augmented Generation) system for searching BEIT p
 
 2. **ChromaDB** (vector database)
    ```bash
-   pip install chromadb==1.3.4
+   pip install chromadb
    ```
+   Note: The application uses ChromaDB's Node.js client v3.1.1. The Python server should be compatible with this version.
 
 3. **Ollama** (for embeddings)
    - Download from: https://ollama.ai
@@ -57,7 +58,7 @@ A fully offline RAG (Retrieval Augmented Generation) system for searching BEIT p
 Open Command Prompt or PowerShell:
 ```cmd
 REM Install Python dependencies
-pip install chromadb==1.3.4
+pip install chromadb
 
 REM Install Ollama from https://ollama.ai/download (Windows)
 REM After installing Ollama, run:
@@ -99,7 +100,7 @@ cd beit-knowledge-base-offline
 #### Step 2: Install Dependencies
 ```bash
 # Install Python dependencies
-pip install chromadb==1.3.4
+pip install chromadb
 
 # Install Ollama from https://ollama.ai/download
 ollama pull nomic-embed-text
