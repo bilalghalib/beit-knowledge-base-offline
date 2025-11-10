@@ -13,6 +13,7 @@
     "seed": "node scripts/offline/seed.js",
     "precompute-embeddings": "node scripts/precompute-embeddings.js",
     "precompute-embeddings:openai": "node scripts/precompute-embeddings-openai.js",
+    "download-onnx-model": "node scripts/download-onnx-model.js",
     "electron": "electron .",
     "electron:dev": "electron .",
     "electron:build": "npm run precompute-embeddings && npm run build && electron-builder",
@@ -29,6 +30,7 @@
     "dotenv": "^17.2.3",
     "next": "16.0.1",
     "next-intl": "^4.4.0",
+    "onnxruntime-node": "^1.18.0",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "tailwind-merge": "^2.5.2",
@@ -58,12 +60,14 @@
       "electron/**/*",
       "chroma-storage/**/*",
       "data/**/*",
+      "models/**/*",
       "public/**/*",
       "package.json"
     ],
     "asarUnpack": [
       "chroma-storage/**/*",
-      "data/**/*"
+      "data/**/*",
+      "models/**/*"
     ],
     "npmRebuild": false,
     "buildDependenciesFromSource": false,

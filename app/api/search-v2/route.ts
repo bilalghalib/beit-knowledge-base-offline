@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getVectorDB } from '@/lib/vector-utils';
+import { getEmbedding as getONNXEmbedding, isModelAvailable } from '@/lib/onnx-embeddings';
 import path from 'path';
 
 export const runtime = 'nodejs';
@@ -31,14 +32,54 @@ async function ensureVectorDBLoaded() {
 }
 
 /**
- * Embed query using Ollama (for now)
- * TODO: Replace with lightweight ONNX model for true zero-dependency operation
+ * Embed query using ONNX model (offline, bundled)
+ * Falls back to Ollama or OpenAI if ONNX not available
  */
-async function embedQuery(query: string): Promise<number[]> {
+async function embedQuery(query: string, openaiApiKey?: string): Promise<number[]> {
+  // Try ONNX first (offline, bundled with app)
+  if (isModelAvailable()) {
+    try {
+      console.log('Using ONNX model for embedding (offline)');
+      return await getONNXEmbedding(query);
+    } catch (error) {
+      console.warn('ONNX embedding failed, trying fallbacks:', error);
+    }
+  }
+
+  // Fallback 1: OpenAI (if API key provided)
+  if (openaiApiKey && openaiApiKey.trim()) {
+    try {
+      console.log('Using OpenAI for embedding');
+      const response = await fetch('https://api.openai.com/v1/embeddings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openaiApiKey.trim()}`,
+        },
+        body: JSON.stringify({
+          model: 'text-embedding-3-small',
+          input: query,
+        }),
+        signal: AbortSignal.timeout(30000),
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API returned ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.data[0].embedding;
+    } catch (error) {
+      console.warn('OpenAI embedding failed, trying Ollama:', error);
+    }
+  }
+
+  // Fallback 2: Ollama (if running locally)
   const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
   const EMBED_MODEL = process.env.OLLAMA_EMBED_MODEL || 'nomic-embed-text';
 
   try {
+    console.log('Using Ollama for embedding (local)');
     const response = await fetch(`${OLLAMA_URL}/api/embeddings`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -56,19 +97,17 @@ async function embedQuery(query: string): Promise<number[]> {
     const data = await response.json();
     return data.embedding;
   } catch (error) {
-    // Provide helpful error message
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error(
-        `Cannot connect to Ollama at ${OLLAMA_URL}. Please ensure Ollama is installed and running. Download from: https://ollama.ai`
-      );
-    }
-    throw error;
+    // All methods failed
+    throw new Error(
+      'Failed to generate query embedding. ONNX model not available, and no fallback (Ollama/OpenAI) is accessible. ' +
+      'Please ensure the ONNX model is bundled with the app, or provide an OpenAI API key in settings.'
+    );
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const { query } = await req.json();
+    const { query, openaiApiKey } = await req.json();
 
     // Validate query
     if (!query || typeof query !== 'string') {
@@ -97,8 +136,8 @@ export async function POST(req: NextRequest) {
     // Load VectorDB (lazy loading)
     const vectorDB = await ensureVectorDBLoaded();
 
-    // Get query embedding
-    const queryEmbedding = await embedQuery(trimmedQuery);
+    // Get query embedding (tries ONNX first, then fallbacks)
+    const queryEmbedding = await embedQuery(trimmedQuery, openaiApiKey);
 
     // Search each collection
     const insightResults = vectorDB.search(queryEmbedding, {
