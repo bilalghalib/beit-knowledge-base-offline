@@ -11,11 +11,12 @@
     "start": "next start -p 3335",
     "lint": "eslint",
     "seed": "node scripts/offline/seed.js",
+    "precompute-embeddings": "node scripts/precompute-embeddings.js",
     "electron": "electron .",
     "electron:dev": "electron .",
-    "electron:build": "npm run build && electron-builder",
-    "electron:build:mac": "npm run build && electron-builder --mac",
-    "electron:build:win": "npm run build && electron-builder --win"
+    "electron:build": "npm run precompute-embeddings && npm run build && electron-builder",
+    "electron:build:mac": "npm run precompute-embeddings && npm run build && electron-builder --mac",
+    "electron:build:win": "npm run precompute-embeddings && npm run build && electron-builder --win"
   },
   "main": "electron/main.js",
   "dependencies": {
