@@ -1,27 +1,23 @@
 import { NextResponse } from 'next/server';
-
-import { getOrCreateCollection } from '@/lib/chroma';
+import path from 'path';
+import fs from 'fs';
 
 export async function GET() {
   try {
-    const collection = await getOrCreateCollection('insights');
-    const { metadatas } = await collection.get({
-      include: ['metadatas'],
-      limit: 2000,
-    });
+    const dataDir = path.join(process.cwd(), 'data');
+    const insightsPath = path.join(dataDir, 'insights.json');
+    const insightsData = JSON.parse(fs.readFileSync(insightsPath, 'utf-8'));
 
     const experts = new Set<string>();
     const modules = new Set<string>();
     const priorities = new Set<string>();
     const types = new Set<string>();
 
-    for (const meta of metadatas ?? []) {
-      if (!meta) continue;
-      const row = meta as Record<string, string | null | undefined>;
-      if (row.expert) experts.add(row.expert);
-      if (row.module) modules.add(row.module);
-      if (row.priority) priorities.add(row.priority);
-      if (row.insight_type) types.add(row.insight_type);
+    for (const insight of insightsData) {
+      if (insight.expert) experts.add(insight.expert);
+      if (insight.module) modules.add(insight.module);
+      if (insight.priority) priorities.add(insight.priority);
+      if (insight.insight_type) types.add(insight.insight_type);
     }
 
     return NextResponse.json({

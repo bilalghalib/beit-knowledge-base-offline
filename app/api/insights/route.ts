@@ -1,44 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-import { getOrCreateCollection } from '@/lib/chroma';
+import path from 'path';
+import fs from 'fs';
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
 
     const moduleFilter = searchParams.get('module');
-    const expert = searchParams.get('expert');
-    const priority = searchParams.get('priority');
-    const type = searchParams.get('type');
+    const expertFilter = searchParams.get('expert');
+    const priorityFilter = searchParams.get('priority');
+    const typeFilter = searchParams.get('type');
 
-    const collection = await getOrCreateCollection('insights');
+    const dataDir = path.join(process.cwd(), 'data');
+    const insightsPath = path.join(dataDir, 'insights.json');
+    let insights = JSON.parse(fs.readFileSync(insightsPath, 'utf-8'));
 
-    const whereObj: Record<string, string> = {};
+    // Apply filters
     if (moduleFilter && moduleFilter !== 'all') {
-      whereObj.module = moduleFilter;
+      insights = insights.filter((i: any) => i.module === moduleFilter);
     }
-    if (expert && expert !== 'all') {
-      whereObj.expert = expert;
+    if (expertFilter && expertFilter !== 'all') {
+      insights = insights.filter((i: any) => i.expert === expertFilter);
     }
-    if (priority && priority !== 'all') {
-      whereObj.priority = priority;
+    if (priorityFilter && priorityFilter !== 'all') {
+      insights = insights.filter((i: any) => i.priority === priorityFilter);
     }
-    if (type && type !== 'all') {
-      whereObj.insight_type = type;
+    if (typeFilter && typeFilter !== 'all') {
+      insights = insights.filter((i: any) => i.insight_type === typeFilter);
     }
-
-    const whereClause = Object.keys(whereObj).length > 0 ? whereObj : undefined;
-
-    const result = await collection.get({
-      include: ['metadatas'],
-      where: whereClause,
-      limit: 1000,
-    });
-
-    const insights = (result.metadatas || []).map((meta, index) => ({
-      id: result.ids?.[index] ?? '',
-      ...(meta ?? {}),
-    }));
 
     return NextResponse.json({ insights });
   } catch (error) {
