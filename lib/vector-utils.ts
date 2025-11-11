@@ -130,11 +130,16 @@ export class VectorDB {
     const path = await import('path');
 
     // Load all embedded data files
-    const [insights, curriculum, metadata] = await Promise.all([
+    const [insightsRaw, curriculumRaw, metadataRaw] = await Promise.all([
       loadEmbeddedDocuments(path.join(dataDir, 'insights_embedded.json')),
       loadEmbeddedDocuments(path.join(dataDir, 'curriculum_embedded.json')),
       loadEmbeddedDocuments(path.join(dataDir, 'metadata_embedded.json')),
     ]);
+
+    // Add type field to each document
+    const insights = insightsRaw.map(doc => ({ ...doc, type: 'insight' as const }));
+    const curriculum = curriculumRaw.map(doc => ({ ...doc, type: 'curriculum' as const }));
+    const metadata = metadataRaw.map(doc => ({ ...doc, type: 'metadata' as const }));
 
     this.documents = [...insights, ...curriculum, ...metadata];
     this.loaded = true;

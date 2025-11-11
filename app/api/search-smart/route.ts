@@ -1,0 +1,286 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { pipeline, env as transformersEnv } from '@xenova/transformers';
+import path from 'path';
+import fs from 'fs';
+
+export const runtime = 'nodejs';
+
+/**
+ * Smart Search API with Graceful Degradation
+ *
+ * Priority:
+ * 1. OpenAI 3072-dim (if API key provided + 3072 embeddings exist)
+ * 2. Transformers.js 1024-dim (offline fallback)
+ */
+
+// Configure Transformers.js
+const MODELS_DIR = path.join(process.cwd(), 'models', 'transformers');
+transformersEnv.cacheDir = MODELS_DIR;
+transformersEnv.allowLocalModels = true;
+transformersEnv.allowRemoteModels = false;
+
+// Model singleton
+let transformersExtractor: any = null;
+
+// VectorDB cache
+let vectorDB1024: any = null;
+let vectorDB3072: any = null;
+
+/**
+ * Check which embedding files are available
+ */
+function checkAvailableEmbeddings(): { has1024: boolean; has3072: boolean } {
+  const dataDir = process.env.DATA_DIR || path.join(process.cwd(), 'data');
+
+  return {
+    has1024: fs.existsSync(path.join(dataDir, 'insights_embedded_1024.json')),
+    has3072: fs.existsSync(path.join(dataDir, 'insights_embedded_3072.json')),
+  };
+}
+
+/**
+ * Load VectorDB with specified dimension
+ */
+async function loadVectorDB(dimensions: 1024 | 3072) {
+  const cache = dimensions === 1024 ? vectorDB1024 : vectorDB3072;
+  if (cache) return cache;
+
+  const dataDir = process.env.DATA_DIR || path.join(process.cwd(), 'data');
+  const suffix = `_${dimensions}.json`;
+
+  console.log(`📚 Loading ${dimensions}-dim embeddings...`);
+
+  const loadFile = async (filename: string) => {
+    try {
+      const filePath = path.join(dataDir, filename);
+      const content = await fs.promises.readFile(filePath, 'utf-8');
+      return JSON.parse(content);
+    } catch (error) {
+      console.error(`Failed to load ${filename}:`, error);
+      return [];
+    }
+  };
+
+  const [insights, curriculum, metadata] = await Promise.all([
+    loadFile(`insights_embedded${suffix}`),
+    loadFile(`curriculum_embedded${suffix}`),
+    loadFile(`metadata_embedded${suffix}`),
+  ]);
+
+  const db = {
+    insights: insights.map((d: any) => ({ ...d, type: 'insight' })),
+    curriculum: curriculum.map((d: any) => ({ ...d, type: 'curriculum' })),
+    metadata: metadata.map((d: any) => ({ ...d, type: 'metadata' })),
+    dimensions,
+  };
+
+  console.log(`✅ Loaded ${dimensions}-dim: ${insights.length} insights, ${curriculum.length} curriculum, ${metadata.length} metadata`);
+
+  if (dimensions === 1024) {
+    vectorDB1024 = db;
+  } else {
+    vectorDB3072 = db;
+  }
+
+  return db;
+}
+
+/**
+ * Initialize Transformers.js model (for 1024-dim fallback)
+ */
+async function initializeTransformersModel() {
+  if (transformersExtractor) return transformersExtractor;
+
+  try {
+    console.log('🤖 Initializing BGE-large (1024-dim)...');
+    transformersExtractor = await pipeline('feature-extraction', 'Xenova/bge-large-en-v1.5', {
+      quantized: true,
+    });
+    console.log('✅ Transformers.js model loaded');
+    return transformersExtractor;
+  } catch (error) {
+    console.error('❌ Failed to load Transformers.js:', error);
+    throw new Error('Transformers.js model not available');
+  }
+}
+
+/**
+ * Generate embedding using OpenAI (3072-dim)
+ */
+async function embedWithOpenAI(text: string, apiKey: string): Promise<number[]> {
+  const response = await fetch('https://api.openai.com/v1/embeddings', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'text-embedding-3-large',
+      input: text,
+    }),
+    signal: AbortSignal.timeout(30000),
+  });
+
+  if (!response.ok) {
+    throw new Error(`OpenAI API returned ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.data[0].embedding;
+}
+
+/**
+ * Generate embedding using Transformers.js (1024-dim)
+ */
+async function embedWithTransformers(text: string): Promise<number[]> {
+  const model = await initializeTransformersModel();
+  const result = await model(text, { pooling: 'mean', normalize: true });
+  return Array.from(result.data);
+}
+
+/**
+ * Calculate cosine similarity
+ */
+function cosineSimilarity(a: number[], b: number[]): number {
+  let dot = 0, magA = 0, magB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    magA += a[i] * a[i];
+    magB += b[i] * b[i];
+  }
+  return dot / (Math.sqrt(magA) * Math.sqrt(magB));
+}
+
+/**
+ * Search documents
+ */
+function searchDocuments(queryEmbedding: number[], db: any, topK: number = 12) {
+  const allDocs = [...db.insights, ...db.curriculum, ...db.metadata];
+
+  const results = allDocs
+    .map((doc) => ({
+      ...doc,
+      similarity: cosineSimilarity(queryEmbedding, doc.embedding),
+    }))
+    .filter((r) => r.similarity > 0.1)
+    .sort((a, b) => b.similarity - a.similarity)
+    .slice(0, topK);
+
+  return results;
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const { query, openaiApiKey } = await req.json();
+
+    if (!query || typeof query !== 'string') {
+      return NextResponse.json({ error: 'Query is required' }, { status: 400 });
+    }
+
+    const trimmedQuery = query.trim();
+    if (trimmedQuery.length < 2 || trimmedQuery.length > 1000) {
+      return NextResponse.json({ error: 'Query must be 2-1000 characters' }, { status: 400 });
+    }
+
+    const available = checkAvailableEmbeddings();
+    const hasApiKey = openaiApiKey && typeof openaiApiKey === 'string' && openaiApiKey.trim();
+
+    let queryEmbedding: number[];
+    let db: any;
+    let method: string;
+
+    // Strategy: Use best available method
+    if (hasApiKey && available.has3072) {
+      // Best quality: OpenAI 3072-dim
+      console.log('🎯 Using OpenAI 3072-dim (highest quality)');
+      method = 'OpenAI 3072-dim';
+      queryEmbedding = await embedWithOpenAI(trimmedQuery, openaiApiKey);
+      db = await loadVectorDB(3072);
+    } else if (available.has1024) {
+      // Fallback: Transformers.js 1024-dim
+      console.log('🔄 Using Transformers.js 1024-dim (offline)');
+      method = 'Transformers.js 1024-dim';
+      queryEmbedding = await embedWithTransformers(trimmedQuery);
+      db = await loadVectorDB(1024);
+    } else if (hasApiKey && !available.has3072 && available.has1024) {
+      // Has API key but no 3072 embeddings, use 1024 + note it
+      console.log('⚠️  OpenAI key provided but 3072-dim embeddings not available, using 1024-dim');
+      method = 'Transformers.js 1024-dim (OpenAI embeddings unavailable)';
+      queryEmbedding = await embedWithTransformers(trimmedQuery);
+      db = await loadVectorDB(1024);
+    } else {
+      return NextResponse.json(
+        { error: 'No embeddings available. Please ensure embedding files are present.' },
+        { status: 503 }
+      );
+    }
+
+    // Search
+    const results = searchDocuments(queryEmbedding, db);
+
+    if (results.length === 0) {
+      return NextResponse.json({
+        answer: "I couldn't find confident matches. Try rephrasing your question.",
+        numFound: 0,
+        sources: [],
+        insights: [],
+        method,
+      });
+    }
+
+    // Format sources
+    const sources = results.map((r) => {
+      const base = {
+        id: r.id,
+        source_type: r.type,
+        similarity: r.similarity,
+      };
+
+      if (r.type === 'insight') {
+        return {
+          ...base,
+          expert: r.metadata.expert || '',
+          module: r.metadata.module || '',
+          theme_english: r.metadata.theme_english || '',
+          quote_english: r.metadata.quote_english || '',
+          quote_arabic: r.metadata.quote_arabic || '',
+          priority: r.metadata.priority || '',
+        };
+      } else if (r.type === 'curriculum') {
+        return {
+          ...base,
+          module: r.metadata.module || '',
+          day: r.metadata.day || null,
+          session_number: r.metadata.session_number || null,
+          activity_name: r.metadata.activity_name || '',
+          purpose: r.metadata.purpose || null,
+        };
+      } else {
+        return {
+          ...base,
+          category: r.metadata.category || 'general',
+          question: r.metadata.question || '',
+          answer: r.metadata.answer || '',
+        };
+      }
+    });
+
+    return NextResponse.json({
+      answer: `Found ${results.length} relevant results. Browse the insights below.`,
+      numFound: results.length,
+      sources,
+      insights: sources.filter((s) => s.source_type === 'insight'),
+      method, // Tell user which method was used
+    });
+
+  } catch (error) {
+    console.error('Smart search error:', error);
+    return NextResponse.json(
+      {
+        error: 'Search failed',
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    );
+  }
+}

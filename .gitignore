@@ -41,3 +41,10 @@ chroma-storage/*.parquet
 
 # Electron build output
 dist/
+
+# ONNX Models (too large for GitHub, download via script)
+models/transformers/
+models/*.onnx
+
+# Large embedding files (optional - can use Git LFS if needed)
+# data/*_embedded_*.json

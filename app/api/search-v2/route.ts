@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getVectorDB } from '@/lib/vector-utils';
-import { getEmbedding as getONNXEmbedding, isModelAvailable } from '@/lib/onnx-embeddings';
+import { pipeline, env } from '@xenova/transformers';
 import path from 'path';
 
 export const runtime = 'nodejs';
@@ -31,76 +31,80 @@ async function ensureVectorDBLoaded() {
   return vectorDB;
 }
 
+// Configure Transformers.js to use local models
+const MODELS_DIR = path.join(process.cwd(), 'models', 'transformers');
+env.cacheDir = MODELS_DIR;
+env.allowLocalModels = true;
+env.allowRemoteModels = false; // Force offline mode
+
+// Model singleton
+let extractor: any = null;
+
 /**
- * Embed query using ONNX model (offline, bundled)
- * Falls back to Ollama or OpenAI if ONNX not available
+ * Initialize Transformers.js model
  */
-async function embedQuery(query: string, openaiApiKey?: string): Promise<number[]> {
-  // Try ONNX first (offline, bundled with app)
-  if (isModelAvailable()) {
-    try {
-      console.log('Using ONNX model for embedding (offline)');
-      return await getONNXEmbedding(query);
-    } catch (error) {
-      console.warn('ONNX embedding failed, trying fallbacks:', error);
-    }
-  }
-
-  // Fallback 1: OpenAI (if API key provided)
-  if (openaiApiKey && openaiApiKey.trim()) {
-    try {
-      console.log('Using OpenAI for embedding');
-      const response = await fetch('https://api.openai.com/v1/embeddings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${openaiApiKey.trim()}`,
-        },
-        body: JSON.stringify({
-          model: 'text-embedding-3-small',
-          input: query,
-        }),
-        signal: AbortSignal.timeout(30000),
-      });
-
-      if (!response.ok) {
-        throw new Error(`OpenAI API returned ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data.data[0].embedding;
-    } catch (error) {
-      console.warn('OpenAI embedding failed, trying Ollama:', error);
-    }
-  }
-
-  // Fallback 2: Ollama (if running locally)
-  const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
-  const EMBED_MODEL = process.env.OLLAMA_EMBED_MODEL || 'nomic-embed-text';
+async function initializeModel() {
+  if (extractor) return extractor;
 
   try {
-    console.log('Using Ollama for embedding (local)');
-    const response = await fetch(`${OLLAMA_URL}/api/embeddings`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: EMBED_MODEL,
-        prompt: query,
-      }),
-      signal: AbortSignal.timeout(30000),
+    console.log('🤖 Initializing BGE-large embedding model...');
+    extractor = await pipeline('feature-extraction', 'Xenova/bge-large-en-v1.5', {
+      quantized: true,
     });
+    console.log('✅ Model loaded successfully (1024 dimensions)');
+    return extractor;
+  } catch (error) {
+    console.error('❌ Failed to load Transformers.js model:', error);
+    throw new Error('Failed to load embedding model. Model may not be bundled with the app.');
+  }
+}
 
-    if (!response.ok) {
-      throw new Error(`Ollama returned ${response.status}`);
+/**
+ * Embed query using Transformers.js (offline, bundled)
+ * Falls back to OpenAI if API key provided
+ */
+async function embedQuery(query: string, openaiApiKey?: string): Promise<number[]> {
+  // Try Transformers.js first (offline, bundled with app)
+  try {
+    const model = await initializeModel();
+    console.log('Using Transformers.js BGE-large for embedding (offline)');
+    const result = await model(query, { pooling: 'mean', normalize: true });
+    return Array.from(result.data);
+  } catch (error) {
+    console.warn('Transformers.js embedding failed:', error);
+
+    // Fallback: OpenAI (if API key provided)
+    if (openaiApiKey && openaiApiKey.trim()) {
+      try {
+        console.log('Using OpenAI for embedding (fallback)');
+        const response = await fetch('https://api.openai.com/v1/embeddings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${openaiApiKey.trim()}`,
+          },
+          body: JSON.stringify({
+            model: 'text-embedding-3-small',
+            input: query,
+          }),
+          signal: AbortSignal.timeout(30000),
+        });
+
+        if (!response.ok) {
+          throw new Error(`OpenAI API returned ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.data[0].embedding;
+      } catch (openaiError) {
+        console.error('OpenAI embedding also failed:', openaiError);
+      }
     }
 
-    const data = await response.json();
-    return data.embedding;
-  } catch (error) {
     // All methods failed
     throw new Error(
-      'Failed to generate query embedding. ONNX model not available, and no fallback (Ollama/OpenAI) is accessible. ' +
-      'Please ensure the ONNX model is bundled with the app, or provide an OpenAI API key in settings.'
+      'Failed to generate query embedding. Offline model not available and no OpenAI API key provided. ' +
+      'Please ensure the Transformers.js model is bundled with the app.'
     );
   }
 }
