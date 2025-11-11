@@ -82,7 +82,7 @@ export default function SearchInterface() {
       // Get OpenAI API key from localStorage if available
       const openaiApiKey = localStorage.getItem('openai_api_key') || undefined;
 
-      const res = await fetch('/api/search-v2', {
+      const res = await fetch('/api/search-smart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
