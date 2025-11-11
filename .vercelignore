@@ -1,0 +1,19 @@
+# Exclude large model files from Vercel deployment
+# These will be downloaded on-demand by Transformers.js
+
+# ONNX Models (529MB - too large for Vercel)
+models/transformers/
+models/*.onnx
+
+# Build cache
+.next/
+dist/
+
+# Development
+node_modules/
+
+# Testing
+coverage/
+
+# Electron build output
+out/
