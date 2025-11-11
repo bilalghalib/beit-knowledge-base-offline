@@ -94,12 +94,56 @@ async function getBatchEmbeddings(texts) {
 }
 
 /**
+ * Check if embeddings need to be regenerated
+ */
+async function needsRegeneration(sourceFile, embeddedFile) {
+  try {
+    const sourcePath = path.join(DATA_DIR, sourceFile);
+    const embeddedPath = path.join(DATA_DIR, embeddedFile);
+
+    // Check if embedded file exists
+    try {
+      await fs.access(embeddedPath);
+    } catch {
+      console.log(`  ℹ️  ${embeddedFile} doesn't exist, will generate`);
+      return true;
+    }
+
+    // Check if source is newer than embedded
+    const sourceStats = await fs.stat(sourcePath);
+    const embeddedStats = await fs.stat(embeddedPath);
+
+    if (sourceStats.mtime > embeddedStats.mtime) {
+      console.log(`  ℹ️  ${sourceFile} has been modified, will regenerate`);
+      return true;
+    }
+
+    console.log(`  ✅ ${embeddedFile} is up to date`);
+    return false;
+  } catch (error) {
+    console.log(`  ⚠️  Error checking ${embeddedFile}, will regenerate: ${error.message}`);
+    return true;
+  }
+}
+
+/**
  * Add embeddings to insights
  */
 async function embedInsights() {
   console.log('📝 Processing insights...');
 
-  const insightsPath = path.join(DATA_DIR, 'insights.json');
+  const sourceFile = 'insights.json';
+  const embeddedFile = 'insights_embedded.json';
+
+  // Check if we need to regenerate
+  if (!(await needsRegeneration(sourceFile, embeddedFile))) {
+    const embeddedPath = path.join(DATA_DIR, embeddedFile);
+    const existing = JSON.parse(await fs.readFile(embeddedPath, 'utf-8'));
+    console.log(`  📋 Using cached embeddings (${existing.length} items)\n`);
+    return existing;
+  }
+
+  const insightsPath = path.join(DATA_DIR, sourceFile);
   const insights = JSON.parse(await fs.readFile(insightsPath, 'utf-8'));
 
   const embeddedInsights = [];
@@ -164,7 +208,18 @@ async function embedInsights() {
 async function embedCurriculum() {
   console.log('📚 Processing curriculum...');
 
-  const curriculumPath = path.join(DATA_DIR, 'curriculum_content.json');
+  const sourceFile = 'curriculum_content.json';
+  const embeddedFile = 'curriculum_embedded.json';
+
+  // Check if we need to regenerate
+  if (!(await needsRegeneration(sourceFile, embeddedFile))) {
+    const embeddedPath = path.join(DATA_DIR, embeddedFile);
+    const existing = JSON.parse(await fs.readFile(embeddedPath, 'utf-8'));
+    console.log(`  📋 Using cached embeddings (${existing.length} items)\n`);
+    return existing;
+  }
+
+  const curriculumPath = path.join(DATA_DIR, sourceFile);
   const curriculum = JSON.parse(await fs.readFile(curriculumPath, 'utf-8'));
 
   const texts = curriculum.map(item => {
@@ -211,7 +266,18 @@ async function embedCurriculum() {
 async function embedMetadata() {
   console.log('ℹ️  Processing metadata...');
 
-  const metadataPath = path.join(DATA_DIR, 'metadata_facts.json');
+  const sourceFile = 'metadata_facts.json';
+  const embeddedFile = 'metadata_embedded.json';
+
+  // Check if we need to regenerate
+  if (!(await needsRegeneration(sourceFile, embeddedFile))) {
+    const embeddedPath = path.join(DATA_DIR, embeddedFile);
+    const existing = JSON.parse(await fs.readFile(embeddedPath, 'utf-8'));
+    console.log(`  📋 Using cached embeddings (${existing.length} items)\n`);
+    return existing;
+  }
+
+  const metadataPath = path.join(DATA_DIR, sourceFile);
   const metadata = JSON.parse(await fs.readFile(metadataPath, 'utf-8'));
 
   const texts = metadata.map(item => item.answer);
@@ -273,23 +339,29 @@ async function main() {
   try {
     const startTime = Date.now();
 
-    // Embed all data
-    await embedInsights();
-    await embedCurriculum();
-    await embedMetadata();
+    console.log('🔍 Checking for cached embeddings...\n');
+
+    // Embed all data (will use cache if available)
+    const insights = await embedInsights();
+    const curriculum = await embedCurriculum();
+    const metadata = await embedMetadata();
 
     // Show stats
     await calculateStats();
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
-    console.log('🎉 All embeddings pre-computed successfully!');
+    console.log('🎉 All embeddings ready!');
     console.log(`⏱️  Total time: ${elapsed} seconds\n`);
     console.log('📋 Next steps:');
     console.log('   1. The *_embedded.json files are ready');
     console.log('   2. Build the Electron app: npm run electron:build:win');
     console.log('   3. Embeddings will be bundled automatically');
     console.log('   4. App will use ONNX for queries (no OpenAI key needed!)\n');
+    console.log('💡 Tip: Embeddings are cached. They will only be regenerated if:');
+    console.log('   - Source files (insights.json, curriculum_content.json, etc.) are modified');
+    console.log('   - Embedded files are deleted');
+    console.log('   - To force regeneration, delete the *_embedded.json files\n');
   } catch (error) {
     console.error('\n❌ Error:', error.message);
     console.error('\n💡 Make sure:');
