@@ -24,7 +24,16 @@ export default function EnglishPage() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-6">
+            <a href="/browse" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
+              Browse
+            </a>
+            <a href="/curriculum" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
+              Curriculum
+            </a>
+            <a href="/analytics" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
+              Analytics
+            </a>
             <button
               onClick={() => setSettingsOpen(true)}
               className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors"
@@ -32,15 +41,17 @@ export default function EnglishPage() {
             >
               <SettingsIcon />
             </button>
-            <a
-              href="/ar"
-              className="px-3 py-1.5 text-sm font-medium transition-colors rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-            >
-              AR
-            </a>
-            <span className="px-3 py-1.5 text-sm font-medium bg-blue-600 text-white rounded-md">
-              EN
-            </span>
+            <div className="flex items-center gap-2">
+              <a
+                href="/ar"
+                className="px-3 py-1.5 text-sm font-medium transition-colors rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+              >
+                AR
+              </a>
+              <span className="px-3 py-1.5 text-sm font-medium bg-blue-600 text-white rounded-md">
+                EN
+              </span>
+            </div>
           </div>
         </div>
       </header>

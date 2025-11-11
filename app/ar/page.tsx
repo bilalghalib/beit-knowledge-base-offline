@@ -24,16 +24,7 @@ export default function ArabicPage() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="px-3 py-1.5 text-sm font-medium bg-blue-600 text-white rounded-md">
-              AR
-            </span>
-            <a
-              href="/en"
-              className="px-3 py-1.5 text-sm font-medium transition-colors rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-            >
-              EN
-            </a>
+          <div className="flex items-center gap-6">
             <button
               onClick={() => setSettingsOpen(true)}
               className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors"
@@ -41,6 +32,26 @@ export default function ArabicPage() {
             >
               <SettingsIcon />
             </button>
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1.5 text-sm font-medium bg-blue-600 text-white rounded-md">
+                AR
+              </span>
+              <a
+                href="/en"
+                className="px-3 py-1.5 text-sm font-medium transition-colors rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+              >
+                EN
+              </a>
+            </div>
+            <a href="/analytics" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
+              التحليلات
+            </a>
+            <a href="/curriculum" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
+              المنهج
+            </a>
+            <a href="/browse" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
+              تصفح
+            </a>
           </div>
         </div>
       </header>
