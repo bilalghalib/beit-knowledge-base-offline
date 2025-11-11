@@ -129,11 +129,11 @@ export class VectorDB {
     console.log('📚 Loading embedded documents into memory...');
     const path = await import('path');
 
-    // Load all embedded data files
+    // Load all embedded data files (1024 dimensions - BGE-large)
     const [insightsRaw, curriculumRaw, metadataRaw] = await Promise.all([
-      loadEmbeddedDocuments(path.join(dataDir, 'insights_embedded.json')),
-      loadEmbeddedDocuments(path.join(dataDir, 'curriculum_embedded.json')),
-      loadEmbeddedDocuments(path.join(dataDir, 'metadata_embedded.json')),
+      loadEmbeddedDocuments(path.join(dataDir, 'insights_embedded_1024.json')),
+      loadEmbeddedDocuments(path.join(dataDir, 'curriculum_embedded_1024.json')),
+      loadEmbeddedDocuments(path.join(dataDir, 'metadata_embedded_1024.json')),
     ]);
 
     // Add type field to each document
