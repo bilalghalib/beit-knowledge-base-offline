@@ -1,59 +1,45 @@
 import { NextResponse } from 'next/server';
-
-import { getOrCreateCollection } from '@/lib/chroma';
+import path from 'path';
+import fs from 'fs';
 
 export async function GET() {
   try {
-    const [insightsCollection, curriculumCollection, metadataCollection] =
-      await Promise.all([
-        getOrCreateCollection('insights'),
-        getOrCreateCollection('curriculum'),
-        getOrCreateCollection('metadata'),
-      ]);
+    const dataDir = path.join(process.cwd(), 'data');
 
-    const [insightsData, curriculumData, metadataData] = await Promise.all([
-      insightsCollection.get({ include: ['metadatas'], limit: 5000 }),
-      curriculumCollection.get({ include: ['metadatas'], limit: 5000 }),
-      metadataCollection.get({ include: ['metadatas'], limit: 100 }),
-    ]);
+    // Load data from JSON files
+    const insights = JSON.parse(fs.readFileSync(path.join(dataDir, 'insights.json'), 'utf-8'));
+    const curriculum = JSON.parse(fs.readFileSync(path.join(dataDir, 'curriculum_content.json'), 'utf-8'));
+    const metadata = JSON.parse(fs.readFileSync(path.join(dataDir, 'metadata_facts.json'), 'utf-8'));
 
-    const insights = insightsData.metadatas ?? [];
-    const curriculum = curriculumData.metadatas ?? [];
-    const metadata = metadataData.metadatas ?? [];
+    const totalInsights = insights.length;
+    const totalActivities = curriculum.length;
+    const totalMetadata = metadata.length;
 
     // Aggregate insights by module
     const insightsByModule: Record<string, number> = {};
-    for (const meta of insights) {
-      if (!meta) continue;
-      const row = meta as Record<string, string | null | undefined>;
-      const moduleName = (row.module as string) || 'Unknown';
+    for (const insight of insights) {
+      const moduleName = insight.module || 'Unknown';
       insightsByModule[moduleName] = (insightsByModule[moduleName] || 0) + 1;
     }
 
     // Aggregate insights by priority
     const insightsByPriority: Record<string, number> = {};
-    for (const meta of insights) {
-      if (!meta) continue;
-      const row = meta as Record<string, string | null | undefined>;
-      const priority = (row.priority as string) || 'Unclassified';
+    for (const insight of insights) {
+      const priority = insight.priority || 'Unclassified';
       insightsByPriority[priority] = (insightsByPriority[priority] || 0) + 1;
     }
 
     // Aggregate insights by type
     const insightsByType: Record<string, number> = {};
-    for (const meta of insights) {
-      if (!meta) continue;
-      const row = meta as Record<string, string | null | undefined>;
-      const type = (row.insight_type as string) || 'General';
+    for (const insight of insights) {
+      const type = insight.insight_type || 'General';
       insightsByType[type] = (insightsByType[type] || 0) + 1;
     }
 
     // Get expert contributions
     const expertCounts: Record<string, number> = {};
-    for (const meta of insights) {
-      if (!meta) continue;
-      const row = meta as Record<string, string | null | undefined>;
-      const expert = (row.expert as string) || 'Unknown';
+    for (const insight of insights) {
+      const expert = insight.expert || 'Unknown';
       expertCounts[expert] = (expertCounts[expert] || 0) + 1;
     }
     const expertContributions = Object.entries(expertCounts)
@@ -61,29 +47,20 @@ export async function GET() {
       .sort((a, b) => b.count - a.count);
 
     // Get unique experts
-    const uniqueExperts = new Set(
-      insights
-        .map(
-          (meta) =>
-            (meta as Record<string, string | null | undefined>)?.expert,
-        )
-        .filter(Boolean) as string[],
-    );
+    const uniqueExperts = new Set(insights.map((i: any) => i.expert).filter(Boolean));
 
     // Aggregate curriculum by module
     const curriculumByModule: Record<string, number> = {};
-    for (const meta of curriculum) {
-      if (!meta) continue;
-      const row = meta as Record<string, string | null | undefined>;
-      const moduleName = (row.module as string) || 'Unknown';
+    for (const item of curriculum) {
+      const moduleName = item.module || 'Unknown';
       curriculumByModule[moduleName] = (curriculumByModule[moduleName] || 0) + 1;
     }
 
     return NextResponse.json({
-      totalInsights: insights.length,
+      totalInsights,
       totalExperts: uniqueExperts.size,
-      totalActivities: curriculum.length,
-      totalMetadata: metadata.length,
+      totalActivities,
+      totalMetadata,
       insightsByModule,
       insightsByPriority,
       insightsByType,
@@ -93,7 +70,7 @@ export async function GET() {
   } catch (error) {
     console.error('Analytics API error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch analytics' },
+      { error: 'Failed to fetch analytics', details: String(error) },
       { status: 500 }
     );
   }

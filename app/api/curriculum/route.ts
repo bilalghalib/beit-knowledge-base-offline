@@ -1,30 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-import { getOrCreateCollection } from '@/lib/chroma';
+import path from 'path';
+import fs from 'fs';
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-
     const moduleFilter = searchParams.get('module');
 
-    const collection = await getOrCreateCollection('curriculum');
+    const dataDir = path.join(process.cwd(), 'data');
+    const curriculumPath = path.join(dataDir, 'curriculum_content.json');
+    let curriculum = JSON.parse(fs.readFileSync(curriculumPath, 'utf-8'));
 
-    let whereClause = undefined;
+    // Apply module filter
     if (moduleFilter && moduleFilter !== 'all') {
-      whereClause = { module: moduleFilter };
+      curriculum = curriculum.filter((c: any) => c.module === moduleFilter);
     }
-
-    const result = await collection.get({
-      include: ['metadatas'],
-      where: whereClause,
-      limit: 5000,
-    });
-
-    const curriculum = (result.metadatas ?? []).map((meta, index) => ({
-      id: result.ids?.[index] ?? '',
-      ...(meta ?? {}),
-    }));
 
     return NextResponse.json({ curriculum });
   } catch (error) {
