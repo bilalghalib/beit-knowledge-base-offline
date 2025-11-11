@@ -101,7 +101,7 @@ async function initializeModel(): Promise<void> {
 
     // Determine model path
     const isPackaged = process.env.NODE_ENV === 'production';
-    const modelPath = isPackaged
+    const modelPath = isPackaged && process.resourcesPath
       ? path.join(process.resourcesPath, 'models', 'embedding-model.onnx')
       : path.join(process.cwd(), 'models', 'embedding-model.onnx');
 
@@ -236,7 +236,7 @@ export async function getBatchEmbeddings(texts: string[]): Promise<number[][]> {
  */
 export function isModelAvailable(): boolean {
   const isPackaged = process.env.NODE_ENV === 'production';
-  const modelPath = isPackaged
+  const modelPath = isPackaged && process.resourcesPath
     ? path.join(process.resourcesPath, 'models', 'embedding-model.onnx')
     : path.join(process.cwd(), 'models', 'embedding-model.onnx');
 
