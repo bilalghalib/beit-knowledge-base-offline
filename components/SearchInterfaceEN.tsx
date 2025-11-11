@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -68,10 +68,10 @@ export default function SearchInterface() {
   const [expandedInsights, setExpandedInsights] = useState<Set<string>>(new Set());
 
   // Check if API key exists
-  useState(() => {
+  useEffect(() => {
     const key = localStorage.getItem('openai_api_key');
     setHasApiKey(!!key);
-  });
+  }, []);
 
   const handleSearch = async (event?: React.FormEvent) => {
     if (event) event.preventDefault();
