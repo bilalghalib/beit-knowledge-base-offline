@@ -244,6 +244,8 @@ export async function POST(req: NextRequest) {
           theme_english: r.metadata.theme_english || '',
           quote_english: r.metadata.quote_english || '',
           quote_arabic: r.metadata.quote_arabic || '',
+          context_notes_english: r.metadata.context_notes_english || '',
+          context_notes_arabic: r.metadata.context_notes_arabic || '',
           priority: r.metadata.priority || '',
         };
       } else if (r.type === 'curriculum') {
