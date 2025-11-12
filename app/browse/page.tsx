@@ -201,7 +201,7 @@ export default function Browse() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-slate-900">
-                {t('common.browse')}
+                All Insights
               </h1>
               <p className="text-sm text-slate-600">
                 {sorted.length} of {insights.length} insights · Filter by module, priority, or theme
@@ -347,40 +347,40 @@ export default function Browse() {
               <TableRow>
                 <TableHead
                   role="button"
-                  className="cursor-pointer text-slate-700"
+                  className="cursor-pointer font-bold text-slate-900"
                   onClick={() => handleSort('insight_id')}
                 >
                   Insight ID
                 </TableHead>
                 <TableHead
                   role="button"
-                  className="cursor-pointer text-slate-700"
+                  className="cursor-pointer font-bold text-slate-900"
                   onClick={() => handleSort('expert')}
                 >
                   Expert
                 </TableHead>
                 <TableHead
                   role="button"
-                  className="cursor-pointer text-slate-700"
+                  className="cursor-pointer font-bold text-slate-900"
                   onClick={() => handleSort('module')}
                 >
                   Module
                 </TableHead>
                 <TableHead
                   role="button"
-                  className="cursor-pointer text-slate-700"
+                  className="cursor-pointer font-bold text-slate-900"
                   onClick={() => handleSort('priority')}
                 >
                   Priority
                 </TableHead>
                 <TableHead
                   role="button"
-                  className="cursor-pointer text-slate-700"
+                  className="cursor-pointer font-bold text-slate-900"
                   onClick={() => handleSort('insight_type')}
                 >
                   Type
                 </TableHead>
-                <TableHead className="text-slate-700">Theme & Key Quotes</TableHead>
+                <TableHead className="font-bold text-slate-900">Theme & Key Quotes</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -399,7 +399,7 @@ export default function Browse() {
                     </p>
                     {insight.quote_english && (
                       <p className="text-sm italic text-slate-600">
-                        “{insight.quote_english}”
+                        "{insight.quote_english}"
                       </p>
                     )}
                     {insight.quote_arabic && (
@@ -407,13 +407,21 @@ export default function Browse() {
                         className="text-sm italic text-slate-600"
                         dir="rtl"
                       >
-                        “{insight.quote_arabic}”
+                        "{insight.quote_arabic}"
                       </p>
                     )}
                     {insight.tags_english && (
-                      <p className="text-xs uppercase tracking-wide text-slate-400">
-                        {insight.tags_english}
-                      </p>
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {insight.tags_english.split(',').map((tag, idx) => (
+                          <Badge
+                            key={idx}
+                            variant="outline"
+                            className="text-xs bg-slate-50 text-slate-700 border-slate-300 font-normal"
+                          >
+                            {tag.trim().replace(/_/g, ' ')}
+                          </Badge>
+                        ))}
+                      </div>
                     )}
                   </TableCell>
                 </TableRow>

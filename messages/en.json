@@ -1,9 +1,9 @@
 {
   "common": {
     "search": "Search",
-    "browse": "Browse",
+    "browse": "All Insights",
     "curriculum": "Curriculum",
-    "analytics": "Analytics",
+    "analytics": "About & Stats",
     "loading": "Loading...",
     "error": "Error",
     "download": "Download",
@@ -98,8 +98,8 @@
     }
   },
   "analytics": {
-    "title": "Analytics Dashboard",
-    "subtitle": "BEIT Project Data Overview",
+    "title": "About & Statistics",
+    "subtitle": "BEIT Project Overview",
     "expertInsights": "Expert Insights",
     "trainingActivities": "Training Activities",
     "expertTrainers": "Expert Trainers",

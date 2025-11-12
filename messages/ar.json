@@ -1,9 +1,9 @@
 {
   "common": {
     "search": "البحث",
-    "browse": "تصفح",
+    "browse": "جميع الرؤى",
     "curriculum": "المنهج",
-    "analytics": "التحليلات",
+    "analytics": "حول والإحصائيات",
     "loading": "جاري التحميل...",
     "error": "خطأ",
     "download": "تحميل",
@@ -98,8 +98,8 @@
     }
   },
   "analytics": {
-    "title": "لوحة التحليلات",
-    "subtitle": "نظرة عامة على بيانات مشروع BEIT",
+    "title": "حول والإحصائيات",
+    "subtitle": "نظرة عامة على مشروع BEIT",
     "expertInsights": "رؤى الخبراء",
     "trainingActivities": "أنشطة التدريب",
     "expertTrainers": "المدربون الخبراء",
