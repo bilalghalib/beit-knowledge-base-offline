@@ -65,10 +65,7 @@
       "public/**/*",
       "package.json"
     ],
-    "asarUnpack": [
-      "data/**/*",
-      "models/**/*"
-    ],
+    "asar": false,
     "npmRebuild": false,
     "buildDependenciesFromSource": false,
     "mac": {
