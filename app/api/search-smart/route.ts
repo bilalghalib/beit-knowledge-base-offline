@@ -311,7 +311,13 @@ export async function POST(req: NextRequest) {
     }
 
     const available = checkAvailableEmbeddings();
-    const hasApiKey = openaiApiKey && typeof openaiApiKey === 'string' && openaiApiKey.trim();
+    const sanitizedApiKey =
+      typeof openaiApiKey === 'string' && openaiApiKey.trim().length > 0
+        ? openaiApiKey.trim()
+        : '';
+    const hasApiKey = sanitizedApiKey.length > 0;
+    const wantsAI = Boolean(generateAnswer);
+    const allowOllama = Boolean(useOllama);
 
     let queryEmbedding: number[];
     let db: any;
@@ -322,7 +328,7 @@ export async function POST(req: NextRequest) {
       // Best quality: OpenAI 3072-dim
       console.log('🎯 Using OpenAI 3072-dim (highest quality)');
       method = 'OpenAI 3072-dim';
-      queryEmbedding = await embedWithOpenAI(trimmedQuery, openaiApiKey);
+      queryEmbedding = await embedWithOpenAI(trimmedQuery, sanitizedApiKey);
       db = await loadVectorDB(3072);
     } else if (available.has1024) {
       // Fallback: Transformers.js 1024-dim
@@ -336,6 +342,14 @@ export async function POST(req: NextRequest) {
       method = 'Transformers.js 1024-dim (OpenAI embeddings unavailable)';
       queryEmbedding = await embedWithTransformers(trimmedQuery);
       db = await loadVectorDB(1024);
+    } else if (!available.has1024 && available.has3072) {
+      return NextResponse.json(
+        {
+          error: 'Only high-dimension embeddings are present, but no OpenAI API key was provided.',
+          helpText: 'Add an OpenAI API key in Settings or regenerate 1024-dim embeddings.',
+        },
+        { status: 503 }
+      );
     } else {
       return NextResponse.json(
         { error: 'No embeddings available. Please ensure embedding files are present.' },
@@ -398,30 +412,32 @@ export async function POST(req: NextRequest) {
     });
 
     // Generate AI answer if requested
-    let generatedAnswer: string | null = null;
-    if (generateAnswer) {
-      const contextBlock = results.slice(0, 5).map((r, idx) => buildContextBlock(r, idx)).join('\n\n');
+    let answerMessage = `Found ${results.length} relevant results. Browse the insights below.`;
+
+    if (wantsAI) {
+      const contextBlock = results.slice(0, 8).map((r, idx) => buildContextBlock(r, idx)).join('\n\n---\n\n');
 
       try {
-        if (useOllama) {
+        if (allowOllama && !hasApiKey) {
           console.log('🤖 Generating answer with Ollama...');
-          generatedAnswer = await generateAnswerWithOllama(trimmedQuery, contextBlock);
+          answerMessage = await generateAnswerWithOllama(trimmedQuery, contextBlock);
         } else if (hasApiKey) {
           console.log('🤖 Generating answer with OpenAI...');
-          generatedAnswer = await generateAnswerWithOpenAI(trimmedQuery, contextBlock, openaiApiKey);
+          answerMessage = await generateAnswerWithOpenAI(trimmedQuery, contextBlock, sanitizedApiKey);
         } else {
-          generatedAnswer = null; // No generation method available
+          answerMessage =
+            'AI answer generation requires an OpenAI API key or enabling the local Ollama option in Settings.';
         }
       } catch (genError) {
         console.error('AI generation error:', genError);
-        generatedAnswer = null; // Fallback to search results only
+        const message =
+          genError instanceof Error ? genError.message : 'Unknown generation error';
+        answerMessage = `AI answer generation failed: ${message}. Showing search results below.`;
       }
     }
 
-    const finalAnswer = generatedAnswer || `Found ${results.length} relevant results. Browse the insights below.`;
-
     return NextResponse.json({
-      answer: finalAnswer,
+      answer: answerMessage,
       numFound: results.length,
       sources,
       insights: sources.filter((s) => s.source_type === 'insight'),
