@@ -19,6 +19,9 @@ transformersEnv.cacheDir = MODELS_DIR;
 transformersEnv.allowLocalModels = true;
 transformersEnv.allowRemoteModels = false;
 
+const OLLAMA_URL = process.env.OLLAMA_URL ?? 'http://localhost:11434';
+const OLLAMA_GENERATE_MODEL = process.env.OLLAMA_GENERATE_MODEL ?? 'llama3:8b';
+
 // Model singleton
 let transformersExtractor: any = null;
 
@@ -26,15 +29,31 @@ let transformersExtractor: any = null;
 let vectorDB1024: any = null;
 let vectorDB3072: any = null;
 
+const EMBEDDED_VARIANTS = ['insights', 'curriculum', 'metadata'] as const;
+
+function filesExistForSuffix(dataDir: string, suffix: string): boolean {
+  return EMBEDDED_VARIANTS.every((base) =>
+    fs.existsSync(path.join(dataDir, `${base}_embedded${suffix}`))
+  );
+}
+
 /**
  * Check which embedding files are available
  */
-function checkAvailableEmbeddings(): { has1024: boolean; has3072: boolean } {
+function checkAvailableEmbeddings(): { has1024: boolean; has3072: boolean; highSuffix: string | null } {
   const dataDir = process.env.DATA_DIR || path.join(process.cwd(), 'data');
+  const baseSuffix = '_1024.json';
+  const highSuffix = '_3072.json';
+  const defaultSuffix = '.json';
+
+  const has1024 = filesExistForSuffix(dataDir, baseSuffix);
+  const has3072 = filesExistForSuffix(dataDir, highSuffix);
+  const hasDefault = filesExistForSuffix(dataDir, defaultSuffix);
 
   return {
-    has1024: fs.existsSync(path.join(dataDir, 'insights_embedded_1024.json')),
-    has3072: fs.existsSync(path.join(dataDir, 'insights_embedded_3072.json')),
+    has1024,
+    has3072: has3072 || hasDefault,
+    highSuffix: has3072 ? highSuffix : hasDefault ? defaultSuffix : null,
   };
 }
 
@@ -46,9 +65,23 @@ async function loadVectorDB(dimensions: 1024 | 3072) {
   if (cache) return cache;
 
   const dataDir = process.env.DATA_DIR || path.join(process.cwd(), 'data');
-  const suffix = `_${dimensions}.json`;
+  let suffix = `_${dimensions}.json`;
 
-  console.log(`📚 Loading ${dimensions}-dim embeddings...`);
+  if (dimensions === 1024) {
+    if (!filesExistForSuffix(dataDir, suffix)) {
+      throw new Error('1024-dim embeddings are missing. Re-run the embedding script.');
+    }
+  } else {
+    if (filesExistForSuffix(dataDir, '_3072.json')) {
+      suffix = '_3072.json';
+    } else if (filesExistForSuffix(dataDir, '.json')) {
+      suffix = '.json';
+    } else {
+      throw new Error('High-dimension (OpenAI/Ollama) embeddings are missing.');
+    }
+  }
+
+  console.log(`📚 Loading embeddings from suffix ${suffix} ...`);
 
   const loadFile = async (filename: string) => {
     try {
@@ -67,14 +100,20 @@ async function loadVectorDB(dimensions: 1024 | 3072) {
     loadFile(`metadata_embedded${suffix}`),
   ]);
 
+  const inferredDimensions =
+    insights[0]?.embedding?.length ??
+    curriculum[0]?.embedding?.length ??
+    metadata[0]?.embedding?.length ??
+    dimensions;
+
   const db = {
     insights: insights.map((d: any) => ({ ...d, type: 'insight' })),
     curriculum: curriculum.map((d: any) => ({ ...d, type: 'curriculum' })),
     metadata: metadata.map((d: any) => ({ ...d, type: 'metadata' })),
-    dimensions,
+    dimensions: inferredDimensions,
   };
 
-  console.log(`✅ Loaded ${dimensions}-dim: ${insights.length} insights, ${curriculum.length} curriculum, ${metadata.length} metadata`);
+  console.log(`✅ Loaded embeddings (${inferredDimensions} dimensions): ${insights.length} insights, ${curriculum.length} curriculum, ${metadata.length} metadata`);
 
   if (dimensions === 1024) {
     vectorDB1024 = db;
