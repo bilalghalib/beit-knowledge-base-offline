@@ -61,6 +61,15 @@ Collections:
 
 ---
 
+## 🔄 Updated Vector Search (No ChromaDB Required)
+
+- All semantic search endpoints (`/api/search-smart`, `/api/search-v2`) now read directly from the JSON files in `./data` and run an in-memory cosine search.  
+- The legacy `start.sh` / `start.bat` scripts that launched a standalone Chroma server are deprecated. They now simply point you to the new workflow.
+- Pre-compute embeddings once (`npm run precompute-embeddings` or `npm run precompute-embeddings-openai`) so the `*_embedded*.json` files exist, then run `npm run dev` (or the Electron bundle) — no Python services necessary.
+- Keeping Ollama running locally is still **optional** and only affects the "Generate AI Answer" toggle; the search UI works fine without it.
+
+---
+
 ## 🔐 Security Notes
 
 - All services bind to `localhost` only (via Docker port maps).
@@ -162,4 +171,3 @@ npm run electron:build:win
 After building, installers will be in the `dist/` folder:
 - macOS: `BEIT Knowledge Base-{version}-mac.dmg` and `.zip`
 - Windows: `BEIT Knowledge Base-{version}-setup.exe` and `-portable.exe`
-

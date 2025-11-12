@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 // Simple X icon component
@@ -54,13 +54,6 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
   const [showOllamaHelp, setShowOllamaHelp] = useState(false);
   const ollamaSteps = (t.raw('ollamaSteps') as string[] | undefined) ?? [];
 
-  useEffect(() => {
-    if (isOpen) {
-      setApiKey(loadInitialKey());
-      setUseOllama(loadInitialOllama());
-    }
-  }, [isOpen]);
-
   const handleSave = () => {
     if (apiKey.trim()) {
       localStorage.setItem('openai_api_key', apiKey.trim());
@@ -106,7 +99,7 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
 
         <div className="px-6 py-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-800 mb-2">
+            <label className="block text-sm font-semibold text-slate-800 mb-2">
               {t('apiKeyLabel')}
             </label>
             <input
@@ -114,14 +107,14 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               placeholder={t('apiKeyPlaceholder')}
-              className="w-full px-4 py-2 border border-slate-200 rounded-lg bg-white text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-500 outline-none transition"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-slate-50 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-blue-400/40 focus:border-blue-500 outline-none transition shadow-sm"
             />
             <p className="mt-2 text-xs text-slate-500">
               {t('apiKeyHelp')}
             </p>
           </div>
 
-          <div className="rounded-xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white px-4 py-4 shadow-[0_1px_6px_rgba(249,115,22,0.08)]">
+          <div className="rounded-xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white px-4 py-4 shadow-sm">
             <div className="flex items-start gap-2">
               <svg className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -145,7 +138,7 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-4">
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-2">

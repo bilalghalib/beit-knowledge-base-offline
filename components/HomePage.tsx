@@ -67,7 +67,9 @@ export default function HomePage() {
         </div>
       </footer>
 
-      <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      {settingsOpen && (
+        <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      )}
     </div>
   );
 }

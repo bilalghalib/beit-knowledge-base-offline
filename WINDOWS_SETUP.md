@@ -29,15 +29,9 @@ Before installing the BEIT Knowledge Base, you need to install these free applic
   ollama --version
   ```
 
-### 3. ChromaDB (Required)
-- **Install via Command Prompt**:
-  ```cmd
-  pip install chromadb
-  ```
-- **Verify installation**: Type:
-  ```cmd
-  chroma --version
-  ```
+### 3. ChromaDB (Deprecated)
+- The new release uses pre-computed `data/*_embedded*.json` files and an in-app JavaScript vector database.
+- You **no longer** need to install or run ChromaDB separately. Older docs/scripts that mention `pip install chromadb` can be ignored.
 
 ## 🚀 Installation Steps
 
@@ -64,7 +58,8 @@ ollama pull nomic-embed-text
 
 This will take 5-10 minutes depending on your internet speed.
 
-### Step 4: Start ChromaDB Server
+### Step 4: Start ChromaDB Server *(Legacy builds only)*
+> **Skip this step for the current release.** The Electron app now ships with an embedded vector search engine, so ChromaDB does not need to be started manually.
 
 The application requires ChromaDB to be running. You have two options:
 
@@ -127,14 +122,15 @@ Click the gear icon (⚙️) to configure:
 2. Check if Ollama is running: Look for Ollama icon in system tray (bottom-right)
 3. Restart Ollama: Right-click tray icon → Quit, then restart from Start Menu
 
-### Problem: "ChromaDB not running" error
+### Problem: "No embeddings found" error
 
 **Solution**:
-1. Install ChromaDB: `pip install chromadb`
-2. Open Command Prompt
-3. Navigate to: `cd %LOCALAPPDATA%\Programs\beit-knowledge-base`
-4. Run: `chroma run --path ./chroma-storage`
-5. Keep window open, restart application
+1. Regenerate the embedded data files from the repo root:
+   ```cmd
+   npm run precompute-embeddings
+   ```
+2. Ensure `data/insights_embedded*.json`, `data/curriculum_embedded*.json`, and `data/metadata_embedded*.json` exist.
+3. Rebuild/restart the application.
 
 ### Problem: "Model not found" error
 
@@ -199,8 +195,7 @@ If you encounter issues not covered here:
 
 3. **Reinstall dependencies**:
    ```cmd
-   pip uninstall chromadb
-   pip install chromadb
+   npm run precompute-embeddings
    ollama pull nomic-embed-text
    ```
 
