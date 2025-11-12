@@ -208,9 +208,98 @@ function searchDocuments(queryEmbedding: number[], db: any, topK: number = 12) {
   return results;
 }
 
+function buildContextBlock(result: any, index: number): string {
+  const num = index + 1;
+  const meta = result.metadata ?? {};
+
+  if (result.type === 'metadata') {
+    return `[${num}] PROJECT FACT (${meta.category ?? 'general'})
+Question: ${meta.question ?? ''}
+Answer: ${meta.answer ?? ''}`;
+  }
+
+  if (result.type === 'curriculum') {
+    return `[${num}] CURRICULUM (${meta.module ?? 'Module'} Day ${meta.day ?? '?'}${meta.session_number ? `, Session ${meta.session_number}` : ''})
+Activity: ${meta.activity_name ?? ''}
+Purpose: ${meta.purpose ?? ''}`;
+  }
+
+  return `[${num}] EXPERT INSIGHT (${meta.expert ?? 'Expert'}, ${meta.module ?? 'Module'})
+Theme: ${meta.theme_english ?? ''}
+Quote (EN): ${meta.quote_english ?? ''}
+Quote (AR): ${meta.quote_arabic ?? ''}
+Context: ${result.text ?? ''}`;
+}
+
+async function generateAnswerWithOpenAI(question: string, context: string, apiKey: string): Promise<string> {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: `You are a helpful assistant that answers questions about the BEIT programme in Mosul, Iraq. Use the provided sources, cite them with [1], [2], etc., and be concise.`,
+        },
+        {
+          role: 'user',
+          content: `Sources:\n${context}\n\nQuestion: ${question}\n\nProvide a concise, grounded answer with citations.`,
+        },
+      ],
+      temperature: 0.2,
+    }),
+    signal: AbortSignal.timeout(30000),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`OpenAI API request failed (${response.status}): ${errorText}`);
+  }
+
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content?.trim() ?? '';
+}
+
+async function generateAnswerWithOllama(question: string, context: string): Promise<string> {
+  const response = await fetch(`${OLLAMA_URL}/api/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: OLLAMA_GENERATE_MODEL,
+      prompt: `You are a helpful assistant that answers questions about the BEIT (Building Energy Innovation Training) programme in Mosul, Iraq.
+
+You have access to curated project facts, curriculum content, and expert interview insights. Use the sources strictly as written and cite them with [1], [2], etc. when answering.
+
+Sources:
+${context}
+
+Question: ${question}
+
+Provide a concise, accurate answer with citations.`,
+      options: {
+        temperature: 0.2,
+      },
+      stream: false,
+    }),
+    signal: AbortSignal.timeout(60000),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Ollama generate request failed (${response.status}): ${err}`);
+  }
+
+  const data = await response.json();
+  return typeof data.response === 'string' ? data.response.trim() : '';
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { query, openaiApiKey } = await req.json();
+    const { query, openaiApiKey, generateAnswer, useOllama } = await req.json();
 
     if (!query || typeof query !== 'string') {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 });
@@ -308,8 +397,31 @@ export async function POST(req: NextRequest) {
       }
     });
 
+    // Generate AI answer if requested
+    let generatedAnswer: string | null = null;
+    if (generateAnswer) {
+      const contextBlock = results.slice(0, 5).map((r, idx) => buildContextBlock(r, idx)).join('\n\n');
+
+      try {
+        if (useOllama) {
+          console.log('🤖 Generating answer with Ollama...');
+          generatedAnswer = await generateAnswerWithOllama(trimmedQuery, contextBlock);
+        } else if (hasApiKey) {
+          console.log('🤖 Generating answer with OpenAI...');
+          generatedAnswer = await generateAnswerWithOpenAI(trimmedQuery, contextBlock, openaiApiKey);
+        } else {
+          generatedAnswer = null; // No generation method available
+        }
+      } catch (genError) {
+        console.error('AI generation error:', genError);
+        generatedAnswer = null; // Fallback to search results only
+      }
+    }
+
+    const finalAnswer = generatedAnswer || `Found ${results.length} relevant results. Browse the insights below.`;
+
     return NextResponse.json({
-      answer: `Found ${results.length} relevant results. Browse the insights below.`,
+      answer: finalAnswer,
       numFound: results.length,
       sources,
       insights: sources.filter((s) => s.source_type === 'insight'),
