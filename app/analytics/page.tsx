@@ -86,6 +86,19 @@ export default function Analytics() {
       </header>
 
       <main className="mx-auto max-w-7xl px-6 py-8">
+        {/* About Section */}
+        <Card className="mb-8 border-blue-200 bg-blue-50/50">
+          <CardHeader>
+            <CardTitle className="text-slate-900">About This Knowledge Base</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-slate-700 leading-relaxed">
+              This knowledge base aggregates insights from expert trainers who delivered BEIT (Building Economic Inclusion in Mosul Through Skills Development) training programs in Architecture, Solar Energy, and Insulation.
+              Through structured interviews conducted in October-November 2024, we captured their experiences, challenges, and recommendations to improve future training design and graduate employment outcomes.
+            </p>
+          </CardContent>
+        </Card>
+
         {/* Key Metrics */}
         <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <Card>
@@ -274,9 +287,6 @@ export default function Analytics() {
                     <th className="pb-3 text-right text-sm font-semibold text-slate-900">
                       Insights
                     </th>
-                    <th className="pb-3 text-right text-sm font-semibold text-slate-900">
-                      Days
-                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -291,9 +301,6 @@ export default function Analytics() {
                       <td className="py-3 text-right text-sm text-slate-700">
                         {stats.insightsByModule[module] || 0}
                       </td>
-                      <td className="py-3 text-right text-sm text-slate-700">
-                        5
-                      </td>
                     </tr>
                   ))}
                   <tr className="font-semibold">
@@ -303,9 +310,6 @@ export default function Analytics() {
                     </td>
                     <td className="pt-3 text-right text-sm text-slate-900">
                       {stats.totalInsights}
-                    </td>
-                    <td className="pt-3 text-right text-sm text-slate-900">
-                      15
                     </td>
                   </tr>
                 </tbody>
