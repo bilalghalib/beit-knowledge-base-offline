@@ -44,17 +44,20 @@ async function startNextServer() {
     if (app.isPackaged) {
       // In production, use the standalone server
       // When asar is disabled, files are in app/ subdirectory
-      serverPath = path.join(process.resourcesPath, 'app', '.next', 'standalone', 'server.js');
+      const standalonePath = path.join(process.resourcesPath, 'app', '.next', 'standalone');
+      serverPath = path.join(standalonePath, 'server.js');
       args = [];
 
       console.log('Production mode - using standalone server');
+      console.log('Standalone directory:', standalonePath);
       console.log('Server path:', serverPath);
 
       // Set required environment variables
       process.env.PORT = '3335';
       process.env.HOSTNAME = 'localhost';
 
-      nextProcess = spawn('node', [serverPath], {
+      nextProcess = spawn('node', ['server.js'], {
+        cwd: standalonePath, // Run from standalone directory
         stdio: ['ignore', 'pipe', 'pipe'],
         detached: false,
         env: {
@@ -167,10 +170,9 @@ async function createWindow() {
     icon: path.join(__dirname, '../public/icon.png'),
   });
 
-  // Open DevTools for debugging (only in development)
-  if (!app.isPackaged) {
-    mainWindow.webContents.openDevTools();
-  }
+  // Open DevTools for debugging
+  // Temporarily enabled in production to diagnose startup issues
+  mainWindow.webContents.openDevTools();
 
   // Show loading screen
   mainWindow.loadFile(path.join(__dirname, 'loading.html'));

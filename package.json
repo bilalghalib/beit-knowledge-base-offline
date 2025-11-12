@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "node scripts/copy-native-libs.js",
     "start": "next start -p 3335",
     "lint": "eslint",
     "seed": "node scripts/offline/seed.js",
@@ -62,10 +63,8 @@
       ".next/standalone/**/*",
       ".next/static/**/*",
       "electron/**/*",
-      "data/**/*",
-      "models/**/*",
-      "public/**/*",
-      "package.json"
+      "package.json",
+      "!.next/standalone/node_modules/.cache/**/*"
     ],
     "asar": false,
     "npmRebuild": false,

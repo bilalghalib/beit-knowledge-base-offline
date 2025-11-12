@@ -1,0 +1,25 @@
+🚀 Starting Next.js server...
+Production mode - using standalone server
+Standalone directory: /Users/bilalghalib/Projects/scripts/beit-knowledge-base-offline/dist/mac-arm64/BEIT Knowledge Base.app/Contents/Resources/app/.next/standalone
+Server path: /Users/bilalghalib/Projects/scripts/beit-knowledge-base-offline/dist/mac-arm64/BEIT Knowledge Base.app/Contents/Resources/app/.next/standalone/server.js
+Waiting for Next.js server to be ready...
+Next.js health check error: 
+Still waiting... (0s)
+Next.js health check error: 
+Next.js health check error: 
+[Next.js] ▲ Next.js 16.0.1
+[Next.js] - Local:        http://localhost:3335
+   - Network:      http://localhost:3335
+
+ ✓ Starting...
+[Next.js] ✓ Ready in 1470ms
+[71693:1112/220642.727346:ERROR:CONSOLE:1] "Request Autofill.enable failed. {"code":-32601,"message":"'Autofill.enable' wasn't found"}", source: devtools://devtools/bundled/core/protocol_client/protocol_client.js (1)
+[71693:1112/220642.727449:ERROR:CONSOLE:1] "Request Autofill.setAddresses failed. {"code":-32601,"message":"'Autofill.setAddresses' wasn't found"}", source: devtools://devtools/bundled/core/protocol_client/protocol_client.js (1)
+Next.js health check: 200
+✅ Next.js server ready!
+Next.js health check timeout
+[Next.js Error] ⨯ Error: Failed to load external module @xenova/transformers: Error: dlopen(/Users/bilalghalib/Projects/scripts/beit-knowledge-base-offline/dist/mac-arm64/BEIT Knowledge Base.app/Contents/Resources/app/.next/standalone/node_modules/@xenova/transformers/node_modules/onnxruntime-node/bin/napi-v3/darwin/arm64/onnxruntime_binding.node, 0x0001): Library not loaded: @rpath/libonnxruntime.1.14.0.dylib
+  Referenced from: <AA246BD8-6EF4-3F19-8CFC-94995A7B3CAA> /Users/bilalghalib/Projects/scripts/beit-knowledge-base-offline/dist/mac-arm64/BEIT Knowledge Base.app/Contents/Resources/app/.next/standalone/node_modules/@xenova/transformers/node_modules/onnxruntime-node/bin/napi-v3/darwin/arm64/onnxruntime_binding.node
+  Reason: tried: '/Users/bilalghalib/Projects/scripts/beit-knowledge-base-offline/dist/mac-arm64/BEIT Knowledge Base.app/Contents/Resources/app/.next/standalone/node_modules/@xenova/transformers/node_modules/onnxruntime-node/bin/napi-v3/darwin/arm64/libonnxruntime.1.14.0.dylib' (no such file), '/Users/bilalghalib/Projects/scripts/beit-knowledge-base-offline/dist/mac-arm64/BEIT Knowledge Base.app/Contents/Resources/app/.next/standalone/node_modules/@xenova/transformers/node_modules/onnxruntime-node/bin/napi-v3/darwin/arm64/libonnxruntime.1.14.0.dylib' (no such file), '/usr/local/lib/libonnxruntime.1.14.0.dylib' (no such file), '/usr/lib/libonnxruntime.1.14.0.dylib' (no such file, not in dyld cache)
+    at Context.externalImport [as y] (.next/server/chunks/[turbopack]_runtime.js:497:15)
+    at async (.next/server/chunks/[root-of-the-server]__1b9649e0._.js:1:1139)

@@ -1,0 +1,23 @@
+🚀 Starting Next.js server...
+Production mode - using standalone server
+Standalone directory: /Users/bilalghalib/Projects/scripts/beit-knowledge-base-offline/dist/mac-arm64/BEIT Knowledge Base.app/Contents/Resources/app/.next/standalone
+Server path: /Users/bilalghalib/Projects/scripts/beit-knowledge-base-offline/dist/mac-arm64/BEIT Knowledge Base.app/Contents/Resources/app/.next/standalone/server.js
+Waiting for Next.js server to be ready...
+[72546:1112/220929.957315:ERROR:CONSOLE:1] "Request Autofill.enable failed. {"code":-32601,"message":"'Autofill.enable' wasn't found"}", source: devtools://devtools/bundled/core/protocol_client/protocol_client.js (1)
+[72546:1112/220929.957465:ERROR:CONSOLE:1] "Request Autofill.setAddresses failed. {"code":-32601,"message":"'Autofill.setAddresses' wasn't found"}", source: devtools://devtools/bundled/core/protocol_client/protocol_client.js (1)
+Next.js health check: 200
+✅ Next.js server ready!
+[Next.js Error] ⨯ Failed to start server
+[Next.js Error] Error: listen EADDRINUSE: address already in use ::1:3335
+    at <unknown> (Error: listen EADDRINUSE: address already in use ::1:3335) {
+  code: 'EADDRINUSE',
+  errno: -48,
+  syscall: 'listen',
+  address: '::1',
+  port: 3335
+}
+Next.js process exited with code 1
+Next.js health check timeout
+[72546:1112/220949.233284:ERROR:content/browser/network_service_instance_impl.cc:613] Network service crashed, restarting service.
+[72763:1112/220949.448047:ERROR:base/apple/mach_port_rendezvous_mac.cc:253] bootstrap_look_up com.beit.knowledge-base.MachPortRendezvousServer.1: Permission denied (1100)
+[72763:1112/220949.448693:ERROR:base/memory/shared_memory_switch.cc:266] No rendezvous client, terminating process (parent died?)
