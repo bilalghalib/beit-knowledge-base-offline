@@ -19,9 +19,11 @@
     "test-setup": "node scripts/test-setup.js",
     "electron": "electron .",
     "electron:dev": "electron .",
-    "electron:build": "npm run precompute-embeddings && npm run build && electron-builder",
-    "electron:build:mac": "npm run precompute-embeddings && npm run build && electron-builder --mac",
-    "electron:build:win": "npm run precompute-embeddings && npm run build && electron-builder --win"
+    "clean": "rm -rf dist",
+    "electron:build": "npm run clean && npm run precompute-embeddings && npm run build && electron-builder",
+    "electron:build:mac": "npm run clean && npm run precompute-embeddings && npm run build && electron-builder --mac",
+    "electron:build:mac:quick": "npm run clean && npm run build && npx electron-builder --mac",
+    "electron:build:win": "npm run clean && npm run precompute-embeddings && npm run build && electron-builder --win"
   },
   "main": "electron/main.js",
   "dependencies": {
