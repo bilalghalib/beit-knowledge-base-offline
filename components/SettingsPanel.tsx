@@ -73,7 +73,7 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
 
         <div className="px-6 py-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <label className="block text-sm font-medium text-slate-800 mb-2">
               {t('apiKeyLabel')}
             </label>
             <input
@@ -81,30 +81,30 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               placeholder={t('apiKeyPlaceholder')}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              className="w-full px-4 py-2 border border-slate-200 rounded-lg bg-white text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-500 outline-none transition"
             />
             <p className="mt-2 text-xs text-slate-500">
               {t('apiKeyHelp')}
             </p>
           </div>
 
-          <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+          <div className="rounded-xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white px-4 py-4 shadow-[0_1px_6px_rgba(249,115,22,0.08)]">
             <div className="flex items-start gap-2">
-              <svg className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <div className="text-xs text-amber-800">
-                <p className="font-semibold mb-1">
+              <div className="text-xs text-amber-900">
+                <p className="font-semibold mb-1 text-sm">
                   {t('aiHelpTitle')}
                 </p>
-                <p>
+                <p className="mb-1 leading-relaxed text-amber-800">
                   {t('aiHelpBody')}
                 </p>
                 <a
                   href="https://platform.openai.com/api-keys"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-700 underline mt-1 inline-block"
+                  className="text-blue-600 hover:text-blue-700 underline font-medium"
                 >
                   {t('aiHelpCTA')}
                 </a>
@@ -119,17 +119,20 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-3 border-t border-slate-200 px-6 py-4">
+        <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-slate-50/70 rounded-b-xl">
           {apiKey && (
             <Button
               variant="outline"
               onClick={handleClear}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              className="border border-red-200 bg-white/90 text-red-600 hover:bg-red-50 hover:text-red-700 shadow-sm"
             >
               {t('clear')}
             </Button>
           )}
-          <Button onClick={handleSave}>
+          <Button
+            onClick={handleSave}
+            className="bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+          >
             {t('save')}
           </Button>
         </div>

@@ -31,6 +31,9 @@ export default function Header({ showNewSearch, onNewSearch }: { showNewSearch?:
           <Link href="/curriculum" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
             {t('common.curriculum')}
           </Link>
+          <Link href="/analytics" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
+            {t('common.analytics')}
+          </Link>
           {showNewSearch && onNewSearch && (
             <Button variant="outline" size="sm" onClick={onNewSearch}>
               {t('common.newSearch')}

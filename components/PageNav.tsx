@@ -18,6 +18,9 @@ export default function PageNav() {
       <Link href="/curriculum" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
         {t('common.curriculum')}
       </Link>
+      <Link href="/analytics" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
+        {t('common.analytics')}
+      </Link>
       <LanguageSwitcher />
     </div>
   );

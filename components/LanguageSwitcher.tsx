@@ -1,29 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-
-const readLocaleFromCookie = () => {
-  if (typeof document === 'undefined') {
-    return 'ar';
-  }
-
-  const cookie = document.cookie
-    .split('; ')
-    .find((row) => row.startsWith('NEXT_LOCALE='));
-
-  return cookie ? cookie.split('=')[1] : 'ar';
-};
+import { useLocale } from 'next-intl';
 
 export default function LanguageSwitcher() {
-  const [locale, setLocale] = useState<string>(() => readLocaleFromCookie());
+  const locale = useLocale();
 
   const switchLocale = (newLocale: string) => {
-    setLocale(newLocale);
-
-    // Set cookie
+    if (newLocale === locale) return;
     document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000`;
-
-    // Force full page reload to apply new locale
     window.location.reload();
   };
 
