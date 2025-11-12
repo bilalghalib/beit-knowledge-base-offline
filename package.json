@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:standalone": "next build && node scripts/prepare-standalone.js",
     "start": "next start -p 3335",
     "lint": "eslint",
     "seed": "node scripts/offline/seed.js",
@@ -19,9 +20,11 @@
     "test-setup": "node scripts/test-setup.js",
     "electron": "electron .",
     "electron:dev": "electron .",
-    "electron:build": "npm run precompute-embeddings && npm run build && electron-builder",
-    "electron:build:mac": "npm run precompute-embeddings && npm run build && electron-builder --mac",
-    "electron:build:win": "npm run precompute-embeddings && npm run build && electron-builder --win"
+    "electron:build": "npm run precompute-embeddings && npm run build:standalone && electron-builder",
+    "electron:build:mac": "npm run build:standalone && electron-builder --mac",
+    "electron:build:mac:full": "npm run precompute-embeddings && npm run build:standalone && electron-builder --mac",
+    "electron:build:win": "npm run build:standalone && electron-builder --win",
+    "electron:build:win:full": "npm run precompute-embeddings && npm run build:standalone && electron-builder --win"
   },
   "main": "electron/main.js",
   "dependencies": {
@@ -58,12 +61,15 @@
     },
     "files": [
       ".next/standalone/**/*",
-      ".next/static/**/*",
       "electron/**/*",
-      "data/**/*",
-      "models/**/*",
-      "public/**/*",
       "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": ".next/standalone",
+        "to": "app",
+        "filter": ["**/*"]
+      }
     ],
     "asar": false,
     "npmRebuild": false,

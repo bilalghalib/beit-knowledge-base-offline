@@ -43,12 +43,21 @@ async function startNextServer() {
 
     if (app.isPackaged) {
       // In production, use the standalone server
-      // When asar is disabled, files are in app/ subdirectory
-      serverPath = path.join(process.resourcesPath, 'app', '.next', 'standalone', 'server.js');
+      // The standalone build is copied to app/ in resources
+      // Structure: resources/app/server.js (not app/.next/standalone/server.js)
+      serverPath = path.join(process.resourcesPath, 'app', 'server.js');
       args = [];
 
       console.log('Production mode - using standalone server');
       console.log('Server path:', serverPath);
+      console.log('Resources path:', process.resourcesPath);
+
+      // Verify server.js exists
+      const fs = await import('fs');
+      if (!fs.existsSync(serverPath)) {
+        throw new Error(`Server file not found at: ${serverPath}\nPlease rebuild with: npm run build:standalone`);
+      }
+      console.log('✅ Server file exists');
 
       // Set required environment variables
       process.env.PORT = '3335';
