@@ -34,6 +34,10 @@ interface InsightSource {
   theme_english: string;
   quote_english: string;
   quote_arabic?: string | null;
+  context_notes_english?: string | null;
+  context_notes_arabic?: string | null;
+  tags_english?: string | null;
+  tags_arabic?: string | null;
   priority?: string | null;
   similarity: number;
 }
@@ -63,6 +67,7 @@ export default function SearchInterfaceAR() {
   const [error, setError] = useState<string | null>(null);
   const [generateLLMAnswer, setGenerateLLMAnswer] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(false);
+  const [expandedInsights, setExpandedInsights] = useState<Set<string>>(new Set());
 
   // Check if API key exists
   useState(() => {
@@ -117,6 +122,19 @@ export default function SearchInterfaceAR() {
     setQuery('');
     setResponse(null);
     setError(null);
+    setExpandedInsights(new Set());
+  };
+
+  const toggleInsightExpansion = (id: string) => {
+    setExpandedInsights(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
   };
 
   const sourceCount =
@@ -352,51 +370,113 @@ export default function SearchInterfaceAR() {
                   }
 
                   const insight = source as InsightSource;
+                  const isExpanded = expandedInsights.has(insight.id);
                   return (
                     <article
                       key={insight.id}
                       className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow transition-shadow hover:shadow-md"
                     >
-                      <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
-                            {index + 1}
-                          </span>
-                          <div>
-                            <p className="text-sm font-semibold text-slate-900">
-                              {insight.expert}
-                            </p>
-                            <p className="text-xs text-slate-500">
-                              {insight.module}
-                            </p>
+                      <button
+                        onClick={() => toggleInsightExpansion(insight.id)}
+                        className="w-full text-left transition-colors hover:bg-slate-50/50"
+                      >
+                        <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-6 py-4">
+                          <div className="flex items-center gap-3 flex-1">
+                            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
+                              {index + 1}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-slate-900">
+                                {insight.expert}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {insight.module}
+                              </p>
+                            </div>
+                            <svg
+                              className={`h-5 w-5 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
                           </div>
+                          {typeof insight.similarity === 'number' && (
+                            <Badge
+                              variant="secondary"
+                              className="bg-slate-100 text-slate-600 ml-2"
+                            >
+                              {Math.round(insight.similarity * 100)}% تطابق
+                            </Badge>
+                          )}
                         </div>
-                        {typeof insight.similarity === 'number' && (
-                          <Badge
-                            variant="secondary"
-                            className="bg-slate-100 text-slate-600"
-                          >
-                            {Math.round(insight.similarity * 100)}% تطابق
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="space-y-4 px-6 py-5">
+                      </button>
+                      <div className="px-6 py-4">
                         <p className="text-sm font-medium text-slate-700">
                           {insight.theme_english}
                         </p>
-                        {insight.quote_arabic && (
-                          <blockquote
-                            className="rounded-l border-r-4 border-blue-400 bg-blue-50/50 px-4 py-3 text-sm italic text-slate-700"
-                          >
-                            &ldquo;{insight.quote_arabic}&rdquo;
-                          </blockquote>
-                        )}
-                        {insight.quote_english && !insight.quote_arabic && (
-                          <blockquote className="rounded-r border-l-4 border-blue-400 bg-blue-50/50 px-4 py-3 text-sm italic text-slate-700">
-                            &ldquo;{insight.quote_english}&rdquo;
-                          </blockquote>
-                        )}
                       </div>
+                      {isExpanded && (
+                        <div className="space-y-4 px-6 pb-5 border-t border-slate-100 pt-4">
+                          {/* 1. Context & Analysis First (Arabic) */}
+                          {insight.context_notes_arabic && (
+                            <div>
+                              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">السياق والتحليل</p>
+                              <p className="text-sm text-slate-600 leading-relaxed" dir="rtl">
+                                {insight.context_notes_arabic}
+                              </p>
+                            </div>
+                          )}
+                          {/* 2. Quote (Arabic) */}
+                          {insight.quote_arabic && (
+                            <div>
+                              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">الاقتباس (العربية)</p>
+                              <blockquote
+                                className="rounded-l border-r-4 border-blue-400 bg-blue-50/50 px-4 py-3 text-sm italic text-slate-700"
+                                dir="rtl"
+                              >
+                                &ldquo;{insight.quote_arabic}&rdquo;
+                              </blockquote>
+                            </div>
+                          )}
+                          {/* 3. Quote (English) */}
+                          {insight.quote_english && (
+                            <div>
+                              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">الاقتباس (الإنجليزية)</p>
+                              <blockquote className="rounded-r border-l-4 border-blue-400 bg-blue-50/50 px-4 py-3 text-sm italic text-slate-700">
+                                &ldquo;{insight.quote_english}&rdquo;
+                              </blockquote>
+                            </div>
+                          )}
+                          {/* 4. Tags (Arabic) */}
+                          {insight.tags_arabic && (
+                            <div>
+                              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">الوسوم</p>
+                              <div className="flex flex-wrap gap-2" dir="rtl">
+                                {insight.tags_arabic.split(',').map((tag, idx) => (
+                                  <Badge key={idx} variant="outline" className="text-xs bg-slate-50 text-slate-700 border-slate-300">
+                                    {tag.trim().replace(/_/g, ' ')}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {/* 5. Priority Last */}
+                          {insight.priority && (
+                            <div className="flex items-center gap-2" dir="rtl">
+                              <Badge className={`text-xs ${
+                                insight.priority.toLowerCase() === 'critical' ? 'bg-red-100 text-red-700' :
+                                insight.priority.toLowerCase() === 'high' ? 'bg-orange-100 text-orange-700' :
+                                'bg-blue-100 text-blue-700'
+                              }`}>
+                                {insight.priority}
+                              </Badge>
+                              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">:الأولوية</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </article>
                   );
                 })}

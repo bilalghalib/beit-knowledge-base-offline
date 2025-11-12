@@ -246,6 +246,8 @@ export async function POST(req: NextRequest) {
           quote_arabic: r.metadata.quote_arabic || '',
           context_notes_english: r.metadata.context_notes_english || '',
           context_notes_arabic: r.metadata.context_notes_arabic || '',
+          tags_english: r.metadata.tags_english || '',
+          tags_arabic: r.metadata.tags_arabic || '',
           priority: r.metadata.priority || '',
         };
       } else if (r.type === 'curriculum') {

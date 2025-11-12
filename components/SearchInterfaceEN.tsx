@@ -36,6 +36,8 @@ interface InsightSource {
   quote_arabic?: string | null;
   context_notes_english?: string | null;
   context_notes_arabic?: string | null;
+  tags_english?: string | null;
+  tags_arabic?: string | null;
   priority?: string | null;
   similarity: number;
 }
@@ -418,6 +420,16 @@ export default function SearchInterface() {
                       </div>
                       {isExpanded && (
                         <div className="space-y-4 px-6 pb-5 border-t border-slate-100 pt-4">
+                          {/* 1. Context & Analysis First */}
+                          {insight.context_notes_english && (
+                            <div>
+                              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Context & Analysis</p>
+                              <p className="text-sm text-slate-600 leading-relaxed">
+                                {insight.context_notes_english}
+                              </p>
+                            </div>
+                          )}
+                          {/* 2. Quote (English) */}
                           {insight.quote_english && (
                             <div>
                               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Quote (English)</p>
@@ -426,6 +438,7 @@ export default function SearchInterface() {
                               </blockquote>
                             </div>
                           )}
+                          {/* 3. Quote (Arabic) */}
                           {insight.quote_arabic && (
                             <div>
                               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Quote (Arabic)</p>
@@ -437,14 +450,20 @@ export default function SearchInterface() {
                               </blockquote>
                             </div>
                           )}
-                          {insight.context_notes_english && (
+                          {/* 4. Tags */}
+                          {insight.tags_english && (
                             <div>
-                              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Context & Analysis</p>
-                              <p className="text-sm text-slate-600 leading-relaxed">
-                                {insight.context_notes_english}
-                              </p>
+                              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Tags</p>
+                              <div className="flex flex-wrap gap-2">
+                                {insight.tags_english.split(',').map((tag, idx) => (
+                                  <Badge key={idx} variant="outline" className="text-xs bg-slate-50 text-slate-700 border-slate-300">
+                                    {tag.trim().replace(/_/g, ' ')}
+                                  </Badge>
+                                ))}
+                              </div>
                             </div>
                           )}
+                          {/* 5. Priority Last */}
                           {insight.priority && (
                             <div className="flex items-center gap-2">
                               <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Priority:</span>
