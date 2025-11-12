@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 
 import type { Insight } from '@/lib/types';
@@ -96,6 +96,7 @@ export default function Browse() {
   const [sortField, setSortField] = useState<SortField>('insight_id');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [loading, setLoading] = useState(true);
+  const [expandedInsights, setExpandedInsights] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchFilterOptions = async () => {
@@ -192,6 +193,19 @@ export default function Browse() {
       type: 'all',
     });
     setSearch('');
+    setExpandedInsights(new Set());
+  };
+
+  const toggleInsightExpansion = (id: string) => {
+    setExpandedInsights(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
   };
 
   return (
@@ -380,52 +394,108 @@ export default function Browse() {
                 >
                   Type
                 </TableHead>
-                <TableHead className="font-bold text-slate-900">Theme & Key Quotes</TableHead>
+                <TableHead className="font-bold text-slate-900">Theme</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sorted.map((insight) => (
-                <TableRow key={insight.id}>
-                  <TableCell className="font-medium text-slate-900">
-                    {insight.insight_id ?? insight.id}
-                  </TableCell>
-                  <TableCell className="text-slate-900">{insight.expert}</TableCell>
-                  <TableCell className="text-slate-900">{insight.module}</TableCell>
-                  <TableCell className="text-slate-900">{insight.priority ?? '—'}</TableCell>
-                  <TableCell className="text-slate-900">{insight.insight_type ?? '—'}</TableCell>
-                  <TableCell className="space-y-2">
-                    <p className="text-sm font-medium text-slate-700">
-                      {insight.theme_english}
-                    </p>
-                    {insight.quote_english && (
-                      <p className="text-sm italic text-slate-600">
-                        "{insight.quote_english}"
-                      </p>
-                    )}
-                    {insight.quote_arabic && (
-                      <p
-                        className="text-sm italic text-slate-600"
-                        dir="rtl"
-                      >
-                        "{insight.quote_arabic}"
-                      </p>
-                    )}
-                    {insight.tags_english && (
-                      <div className="flex flex-wrap gap-1.5 pt-1">
-                        {insight.tags_english.split(',').map((tag, idx) => (
-                          <Badge
-                            key={idx}
-                            variant="outline"
-                            className="text-xs bg-slate-50 text-slate-700 border-slate-300 font-normal"
+              {sorted.map((insight) => {
+                const isExpanded = expandedInsights.has(insight.id);
+                return (
+                  <React.Fragment key={insight.id}>
+                    <TableRow
+                      className="cursor-pointer hover:bg-slate-50/50 transition-colors"
+                      onClick={() => toggleInsightExpansion(insight.id)}
+                    >
+                      <TableCell className="font-medium text-slate-900">
+                        <div className="flex items-center gap-2">
+                          <svg
+                            className={`h-4 w-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
                           >
-                            {tag.trim().replace(/_/g, ' ')}
-                          </Badge>
-                        ))}
-                      </div>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                          {insight.insight_id ?? insight.id}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-slate-900">{insight.expert}</TableCell>
+                      <TableCell className="text-slate-900">{insight.module}</TableCell>
+                      <TableCell className="text-slate-900">{insight.priority ?? '—'}</TableCell>
+                      <TableCell className="text-slate-900">{insight.insight_type ?? '—'}</TableCell>
+                      <TableCell>
+                        <p className="text-sm font-medium text-slate-700">
+                          {insight.theme_english}
+                        </p>
+                      </TableCell>
+                    </TableRow>
+                    {isExpanded && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="bg-slate-50/50 border-t-0">
+                          <div className="p-4 space-y-4">
+                            {/* Date */}
+                            {insight.date && (
+                              <div>
+                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Date</p>
+                                <p className="text-sm text-slate-700">{new Date(insight.date).toLocaleDateString()}</p>
+                              </div>
+                            )}
+
+                            {/* Context & Analysis */}
+                            {insight.context_english && (
+                              <div>
+                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Context & Analysis</p>
+                                <p className="text-sm text-slate-600 leading-relaxed">{insight.context_english}</p>
+                              </div>
+                            )}
+
+                            {/* Quote (English) */}
+                            {insight.quote_english && (
+                              <div>
+                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Quote (English)</p>
+                                <blockquote className="rounded-r border-l-4 border-blue-400 bg-blue-50/50 px-4 py-3 text-sm italic text-slate-700">
+                                  &ldquo;{insight.quote_english}&rdquo;
+                                </blockquote>
+                              </div>
+                            )}
+
+                            {/* Quote (Arabic) */}
+                            {insight.quote_arabic && (
+                              <div>
+                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Quote (Arabic)</p>
+                                <blockquote
+                                  className="rounded-l border-r-4 border-blue-400 bg-blue-50/50 px-4 py-3 text-sm italic text-slate-700"
+                                  dir="rtl"
+                                >
+                                  &ldquo;{insight.quote_arabic}&rdquo;
+                                </blockquote>
+                              </div>
+                            )}
+
+                            {/* Tags */}
+                            {insight.tags_english && (
+                              <div>
+                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Tags</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {insight.tags_english.split(',').map((tag, idx) => (
+                                    <Badge
+                                      key={idx}
+                                      variant="outline"
+                                      className="text-xs bg-slate-50 text-slate-700 border-slate-300 font-normal"
+                                    >
+                                      {tag.trim().replace(/_/g, ' ')}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
                     )}
-                  </TableCell>
-                </TableRow>
-              ))}
+                  </React.Fragment>
+                );
+              })}
               {!loading && sorted.length === 0 && (
                 <TableRow>
                   <TableCell
