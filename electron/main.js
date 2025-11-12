@@ -43,7 +43,8 @@ async function startNextServer() {
 
     if (app.isPackaged) {
       // In production, use the standalone server
-      serverPath = path.join(process.resourcesPath, '.next', 'standalone', 'server.js');
+      // When asar is disabled, files are in app/ subdirectory
+      serverPath = path.join(process.resourcesPath, 'app', '.next', 'standalone', 'server.js');
       args = [];
 
       console.log('Production mode - using standalone server');
@@ -160,7 +161,7 @@ async function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
-      devTools: !app.isPackaged, // Enable DevTools only in development
+      devTools: true, // Always enable DevTools for debugging
     },
     title: 'BEIT Knowledge Base',
     icon: path.join(__dirname, '../public/icon.png'),
