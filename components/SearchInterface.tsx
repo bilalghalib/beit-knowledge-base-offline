@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { SETTINGS_UPDATED_EVENT } from '@/components/SettingsPanel';
 
 interface CurriculumSource {
   id: string;
@@ -75,12 +76,32 @@ export default function SearchInterface() {
   const [error, setError] = useState<string | null>(null);
   const [generateLLMAnswer, setGenerateLLMAnswer] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(false);
+  const [useOllama, setUseOllama] = useState(false);
   const [expandedInsights, setExpandedInsights] = useState<Set<string>>(new Set());
 
+  const syncSettingsState = () => {
+    if (typeof window === 'undefined') return;
+    setHasApiKey(!!localStorage.getItem('openai_api_key'));
+    setUseOllama(localStorage.getItem('use_ollama') === 'true');
+  };
+
   useEffect(() => {
-    const key = localStorage.getItem('openai_api_key');
-    setHasApiKey(!!key);
+    syncSettingsState();
+    if (typeof window === 'undefined') return;
+    const handler = () => syncSettingsState();
+    window.addEventListener(SETTINGS_UPDATED_EVENT, handler);
+    return () => {
+      window.removeEventListener(SETTINGS_UPDATED_EVENT, handler);
+    };
   }, []);
+
+  const canGenerateAnswer = hasApiKey || useOllama;
+
+  useEffect(() => {
+    if (!canGenerateAnswer && generateLLMAnswer) {
+      setGenerateLLMAnswer(false);
+    }
+  }, [canGenerateAnswer, generateLLMAnswer]);
 
   const handleSearch = async (event?: React.FormEvent) => {
     if (event) event.preventDefault();
@@ -99,7 +120,8 @@ export default function SearchInterface() {
         body: JSON.stringify({
           query,
           generateAnswer: generateLLMAnswer,
-          openaiApiKey
+          openaiApiKey,
+          useOllama
         }),
       });
 
@@ -152,7 +174,11 @@ export default function SearchInterface() {
   })) || []);
 
   const statusLabel = generateLLMAnswer
-    ? (hasApiKey ? t('loadingGenerating') : t('loadingGeneratingSlow'))
+    ? (hasApiKey
+        ? t('loadingGenerating')
+        : useOllama
+          ? t('loadingGeneratingOllama')
+          : t('loadingGeneratingSlow'))
     : t('loadingSearch');
 
   return (

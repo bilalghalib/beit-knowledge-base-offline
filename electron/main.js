@@ -9,11 +9,9 @@ const __dirname = path.dirname(__filename);
 
 let mainWindow;
 let nextProcess = null;
-let chromaProcess = null;
 
 // Set default environment variables for the application
 // These ensure the app works even without .env.local file
-process.env.CHROMA_URL = process.env.CHROMA_URL || 'http://localhost:8000';
 process.env.OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 process.env.OLLAMA_EMBED_MODEL = process.env.OLLAMA_EMBED_MODEL || 'nomic-embed-text';
 process.env.OLLAMA_GENERATE_MODEL = process.env.OLLAMA_GENERATE_MODEL || 'llama3:8b';
@@ -30,106 +28,9 @@ async function checkService(url, serviceName) {
   }
 }
 
-// Check all required dependencies
+// Dependency check placeholder (all core services run in-app now)
 async function checkDependencies() {
-  console.log('🔍 Checking dependencies...');
-
-  const issues = [];
-
-  // Check Ollama
-  const ollama = await checkService('http://localhost:11434/api/version', 'Ollama');
-  if (!ollama.running) {
-    issues.push({
-      name: 'Ollama',
-      status: 'not_running',
-      message: 'Ollama is not running or not installed',
-      instructions: [
-        '1. Download Ollama from https://ollama.ai',
-        '2. Install and start Ollama',
-        '3. Run: ollama pull nomic-embed-text',
-        '4. Restart this application'
-      ]
-    });
-  }
-
-  // Check ChromaDB
-  const chroma = await checkService('http://localhost:8000/api/v1/heartbeat', 'ChromaDB');
-  if (!chroma.running) {
-    issues.push({
-      name: 'ChromaDB',
-      status: 'not_running',
-      message: 'ChromaDB server is not running',
-      instructions: [
-        '1. Install ChromaDB: pip install chromadb',
-        '2. Start ChromaDB server using start.bat (Windows) or start.sh (Mac/Linux)',
-        '3. Restart this application'
-      ]
-    });
-  }
-
-  return issues;
-}
-
-// Start ChromaDB server automatically (Windows)
-async function startChromaDB() {
-  console.log('🚀 Starting ChromaDB server...');
-
-  try {
-    // Get the correct path to chroma-storage
-    const chromaStoragePath = app.isPackaged
-      ? path.join(process.resourcesPath, 'app.asar.unpacked', 'chroma-storage')
-      : path.join(app.getAppPath(), 'chroma-storage');
-
-    console.log('ChromaDB storage path:', chromaStoragePath);
-
-    // Try to start ChromaDB
-    const isWindows = process.platform === 'win32';
-    const chromaCommand = isWindows ? 'chroma.exe' : 'chroma';
-
-    chromaProcess = spawn(chromaCommand, ['run', '--path', chromaStoragePath], {
-      stdio: ['ignore', 'pipe', 'pipe'],
-      detached: false,
-      shell: isWindows
-    });
-
-    chromaProcess.stdout.on('data', (data) => {
-      console.log(`[ChromaDB] ${data.toString().trim()}`);
-    });
-
-    chromaProcess.stderr.on('data', (data) => {
-      console.error(`[ChromaDB Error] ${data.toString().trim()}`);
-    });
-
-    chromaProcess.on('error', (error) => {
-      console.error('Failed to start ChromaDB:', error.message);
-      chromaProcess = null;
-    });
-
-    chromaProcess.on('exit', (code) => {
-      console.log(`ChromaDB process exited with code ${code}`);
-      chromaProcess = null;
-    });
-
-    // Wait for ChromaDB to be ready (up to 30 seconds)
-    console.log('Waiting for ChromaDB to be ready...');
-    for (let i = 0; i < 30; i++) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const result = await checkService('http://localhost:8000/api/v1/heartbeat', 'ChromaDB');
-      if (result.running) {
-        console.log('✅ ChromaDB server ready!');
-        return true;
-      }
-      if (i % 5 === 0 && i > 0) {
-        console.log(`Still waiting for ChromaDB... (${i}s)`);
-      }
-    }
-
-    throw new Error('ChromaDB failed to start within 30 seconds');
-  } catch (error) {
-    console.error('Error starting ChromaDB:', error);
-    chromaProcess = null;
-    return false;
-  }
+  return [];
 }
 
 // Start Next.js server
@@ -160,7 +61,6 @@ async function startNextServer() {
           PORT: '3335',
           HOSTNAME: 'localhost',
           NODE_ENV: 'production',
-          CHROMA_URL: process.env.CHROMA_URL,
           OLLAMA_URL: process.env.OLLAMA_URL,
           OLLAMA_EMBED_MODEL: process.env.OLLAMA_EMBED_MODEL,
           OLLAMA_GENERATE_MODEL: process.env.OLLAMA_GENERATE_MODEL,
@@ -274,21 +174,10 @@ async function createWindow() {
   // Show loading screen
   mainWindow.loadFile(path.join(__dirname, 'loading.html'));
 
-  // Check dependencies first
-  const depIssues = await checkDependencies();
-
-  // Try to auto-start ChromaDB if it's not running
-  if (depIssues.some(issue => issue.name === 'ChromaDB')) {
-    console.log('Attempting to auto-start ChromaDB...');
-    await startChromaDB();
-  }
-
-  // Re-check dependencies after attempting auto-start
+  // Dependencies are optional now; skip blocking checks
   const finalIssues = await checkDependencies();
-
   if (finalIssues.length > 0) {
-    console.error('⚠️  Missing dependencies:', finalIssues);
-    // Send dependency issues to renderer for display
+    console.error('⚠️  Optional dependency notices:', finalIssues);
     mainWindow.webContents.once('did-finish-load', () => {
       mainWindow.webContents.send('dependency-issues', finalIssues);
     });
@@ -314,11 +203,6 @@ app.on('window-all-closed', () => {
   if (nextProcess) {
     console.log('🛑 Stopping Next.js server...');
     nextProcess.kill();
-  }
-
-  if (chromaProcess) {
-    console.log('🛑 Stopping ChromaDB server...');
-    chromaProcess.kill();
   }
 
   if (process.platform !== 'darwin') {

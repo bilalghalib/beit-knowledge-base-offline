@@ -25,10 +25,8 @@
   },
   "main": "electron/main.js",
   "dependencies": {
-    "@chroma-core/ollama": "^0.1.7",
     "@radix-ui/react-slot": "^1.1.2",
     "@xenova/transformers": "^2.17.2",
-    "chromadb": "^3.1.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.3",
@@ -62,14 +60,12 @@
       ".next/standalone/**/*",
       ".next/static/**/*",
       "electron/**/*",
-      "chroma-storage/**/*",
       "data/**/*",
       "models/**/*",
       "public/**/*",
       "package.json"
     ],
     "asarUnpack": [
-      "chroma-storage/**/*",
       "data/**/*",
       "models/**/*"
     ],

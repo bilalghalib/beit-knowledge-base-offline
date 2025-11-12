@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 // Simple X icon component
@@ -29,12 +29,36 @@ const loadInitialKey = () => {
   return localStorage.getItem('openai_api_key') ?? '';
 };
 
+const loadInitialOllama = () => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+  return localStorage.getItem('use_ollama') === 'true';
+};
+
+const SETTINGS_UPDATED_EVENT = 'beit-settings-changed';
+
+const notifySettingsChange = () => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(SETTINGS_UPDATED_EVENT));
+  }
+};
+
 export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
   const t = useTranslations('settings');
   const locale = useLocale();
   const isRTL = locale === 'ar';
   const [apiKey, setApiKey] = useState(loadInitialKey);
+  const [useOllama, setUseOllama] = useState(loadInitialOllama);
   const [saved, setSaved] = useState(false);
+  const ollamaSteps = (t.raw('ollamaSteps') as string[] | undefined) ?? [];
+
+  useEffect(() => {
+    if (isOpen) {
+      setApiKey(loadInitialKey());
+      setUseOllama(loadInitialOllama());
+    }
+  }, [isOpen]);
 
   const handleSave = () => {
     if (apiKey.trim()) {
@@ -42,6 +66,13 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
     } else {
       localStorage.removeItem('openai_api_key');
     }
+    if (useOllama) {
+      localStorage.setItem('use_ollama', 'true');
+    } else {
+      localStorage.removeItem('use_ollama');
+    }
+    notifySettingsChange();
+
     setSaved(true);
     setTimeout(() => {
       setSaved(false);
@@ -52,6 +83,7 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
   const handleClear = () => {
     setApiKey('');
     localStorage.removeItem('openai_api_key');
+    notifySettingsChange();
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
   };
@@ -112,6 +144,33 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
             </div>
           </div>
 
+          <div className="rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-800">{t('ollamaTitle')}</p>
+                <p className="text-xs text-slate-600 mt-1">
+                  {t('ollamaDescription')}
+                </p>
+              </div>
+              <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={useOllama}
+                  onChange={(event) => setUseOllama(event.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span>{t('ollamaToggle')}</span>
+              </label>
+            </div>
+            {ollamaSteps.length > 0 && (
+              <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-slate-600">
+                {ollamaSteps.map((step, index) => (
+                  <li key={index}>{step}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+
           {saved && (
             <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-2 rounded-lg text-sm">
               {t('saved')}
@@ -141,5 +200,5 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
   );
 }
 
-// Export the SettingsIcon for use in headers
-export { SettingsIcon };
+// Export the SettingsIcon and event name for other components
+export { SettingsIcon, SETTINGS_UPDATED_EVENT };
