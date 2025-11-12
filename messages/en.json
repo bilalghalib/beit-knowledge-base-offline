@@ -19,6 +19,10 @@
     "placeholder": "Ask a question about training delivery, participant barriers, or curriculum tweaks...",
     "characterCount": "{count} characters",
     "pressEnter": "Press Enter to submit",
+    "generateAnswerLabel": "Generate AI Answer (slower)",
+    "loadingGeneratingSlow": "Generating AI answer (this may take 2-5 minutes)...",
+    "loadingGenerating": "Generating AI answer...",
+    "loadingSearch": "Searching...",
     "searching": "Searching…",
     "expertResponse": "Expert Response",
     "sources": "SOURCES ({count})",
@@ -27,6 +31,31 @@
     "match": "match",
     "askAnother": "Ask Another Question",
     "tryAsking": "Try asking",
+    "aiWarning": {
+      "title": "AI generation will be very slow on local hardware",
+      "body": "Without an OpenAI API key, answer generation may take 2-5 minutes depending on your computer resources. With a key, results arrive in 5-10 seconds.",
+      "tip": "Add an OpenAI API key in Settings for faster answers, or uncheck \"Generate AI Answer\" for instant search results."
+    },
+    "responseHeading": "Expert Response",
+    "sourcesBadge": "{count} {count, plural, one {source} other {sources}}",
+    "sourcesHeader": "{count} {count, plural, one {SOURCE} other {SOURCES}}",
+    "curriculumBadge": "Curriculum Activity",
+    "metadataBadge": "Project Fact",
+    "activityFallback": "Activity",
+    "contextLabel": "Context & Analysis",
+    "quoteEnglishLabel": "Quote (English)",
+    "quoteArabicLabel": "Quote (Arabic)",
+    "tagsLabel": "Tags",
+    "priorityLabel": "Priority",
+    "matchLabel": "{percent}% match",
+    "exampleQuestions": [
+      "What hands-on activities worked best in training?",
+      "What barriers prevent graduates from finding work?",
+      "How should we balance theory vs practice?",
+      "What cultural barriers affect green building adoption in Mosul?",
+      "What market opportunities exist for solar energy?",
+      "Which certification approaches are most valued by employers?"
+    ],
     "failed": "Failed to search. Please try again."
   },
   "browse": {
@@ -94,5 +123,18 @@
   },
   "footer": {
     "copyright": "© 2025 ITC Iraq · Building Energy Innovation Training Programme"
+  },
+  "settings": {
+    "title": "Settings",
+    "apiKeyLabel": "OpenAI API Key",
+    "apiKeyPlaceholder": "Enter your API key",
+    "apiKeyHelp": "This key is stored only on your device and is used to generate faster AI answers.",
+    "aiHelpTitle": "Slow AI generation?",
+    "aiHelpBody": "AI answer generation will be very slow on most local computers. Add an OpenAI API key to receive results within seconds.",
+    "aiHelpCTA": "Get an API key",
+    "save": "Save",
+    "clear": "Clear",
+    "saved": "Saved!",
+    "close": "Close"
   }
 }

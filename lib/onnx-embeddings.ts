@@ -7,7 +7,6 @@
 
 import * as ort from 'onnxruntime-node';
 import path from 'path';
-import { readFileSync } from 'fs';
 
 // Model configuration
 const MODEL_NAME = 'all-MiniLM-L6-v2';

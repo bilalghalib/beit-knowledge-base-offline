@@ -1,7 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useState, useTransition, useEffect } from 'react';
+import { useState } from 'react';
 
 const readLocaleFromCookie = () => {
   if (typeof document === 'undefined') {
@@ -16,15 +15,7 @@ const readLocaleFromCookie = () => {
 };
 
 export default function LanguageSwitcher() {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  // Initialize with 'ar' for consistent SSR
-  const [locale, setLocale] = useState<string>('ar');
-
-  // Read actual cookie value after hydration (client-side only)
-  useEffect(() => {
-    setLocale(readLocaleFromCookie());
-  }, []);
+  const [locale, setLocale] = useState<string>(() => readLocaleFromCookie());
 
   const switchLocale = (newLocale: string) => {
     setLocale(newLocale);
@@ -45,7 +36,6 @@ export default function LanguageSwitcher() {
             ? 'bg-blue-600 text-white'
             : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
         }`}
-        disabled={isPending}
       >
         EN
       </button>
@@ -56,7 +46,6 @@ export default function LanguageSwitcher() {
             ? 'bg-blue-600 text-white'
             : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
         }`}
-        disabled={isPending}
       >
         AR
       </button>

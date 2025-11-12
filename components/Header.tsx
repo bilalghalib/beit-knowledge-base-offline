@@ -36,20 +36,7 @@ export default function Header({ showNewSearch, onNewSearch }: { showNewSearch?:
               {t('common.newSearch')}
             </Button>
           )}
-          <div className="flex items-center gap-2">
-            <Link
-              href="/ar"
-              className="px-3 py-1.5 text-sm font-medium transition-colors rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-            >
-              AR
-            </Link>
-            <Link
-              href="/en"
-              className="px-3 py-1.5 text-sm font-medium transition-colors rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-            >
-              EN
-            </Link>
-          </div>
+          <LanguageSwitcher />
         </div>
       </div>
     </header>

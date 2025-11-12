@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 // Simple X icon component
 const XIcon = () => (
@@ -19,20 +20,21 @@ const SettingsIcon = () => (
 interface SettingsPanelProps {
   isOpen: boolean;
   onClose: () => void;
-  language?: 'en' | 'ar';
 }
 
-export default function SettingsPanel({ isOpen, onClose, language = 'en' }: SettingsPanelProps) {
-  const [apiKey, setApiKey] = useState('');
-  const [saved, setSaved] = useState(false);
+const loadInitialKey = () => {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+  return localStorage.getItem('openai_api_key') ?? '';
+};
 
-  useEffect(() => {
-    // Load API key from localStorage on mount
-    const savedKey = localStorage.getItem('openai_api_key');
-    if (savedKey) {
-      setApiKey(savedKey);
-    }
-  }, []);
+export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
+  const t = useTranslations('settings');
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
+  const [apiKey, setApiKey] = useState(loadInitialKey);
+  const [saved, setSaved] = useState(false);
 
   const handleSave = () => {
     if (apiKey.trim()) {
@@ -56,31 +58,11 @@ export default function SettingsPanel({ isOpen, onClose, language = 'en' }: Sett
 
   if (!isOpen) return null;
 
-  const text = language === 'ar' ? {
-    title: 'الإعدادات',
-    apiKeyLabel: 'مفتاح OpenAI API',
-    apiKeyPlaceholder: 'أدخل مفتاح API الخاص بك',
-    apiKeyHelp: 'سيتم استخدام هذا المفتاح لتوليد إجابات الذكاء الاصطناعي. سيتم حفظه محلياً على جهازك فقط.',
-    saveButton: 'حفظ',
-    clearButton: 'مسح',
-    savedMessage: 'تم الحفظ!',
-    closeButton: 'إغلاق'
-  } : {
-    title: 'Settings',
-    apiKeyLabel: 'OpenAI API Key',
-    apiKeyPlaceholder: 'Enter your API key',
-    apiKeyHelp: 'This key will be used to generate AI answers. It will only be stored locally on your device.',
-    saveButton: 'Save',
-    clearButton: 'Clear',
-    savedMessage: 'Saved!',
-    closeButton: 'Close'
-  };
-
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full" dir={isRTL ? 'rtl' : 'ltr'}>
         <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-          <h2 className="text-xl font-semibold text-slate-900">{text.title}</h2>
+          <h2 className="text-xl font-semibold text-slate-900">{t('title')}</h2>
           <button
             onClick={onClose}
             className="text-slate-400 hover:text-slate-600 transition-colors"
@@ -92,17 +74,17 @@ export default function SettingsPanel({ isOpen, onClose, language = 'en' }: Sett
         <div className="px-6 py-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              {text.apiKeyLabel}
+              {t('apiKeyLabel')}
             </label>
             <input
               type="password"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              placeholder={text.apiKeyPlaceholder}
+              placeholder={t('apiKeyPlaceholder')}
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
             />
             <p className="mt-2 text-xs text-slate-500">
-              {text.apiKeyHelp}
+              {t('apiKeyHelp')}
             </p>
           </div>
 
@@ -113,13 +95,10 @@ export default function SettingsPanel({ isOpen, onClose, language = 'en' }: Sett
               </svg>
               <div className="text-xs text-amber-800">
                 <p className="font-semibold mb-1">
-                  {language === 'ar' ? 'توليد الذكاء الاصطناعي بطيء؟' : 'Slow AI generation?'}
+                  {t('aiHelpTitle')}
                 </p>
                 <p>
-                  {language === 'ar'
-                    ? 'توليد الإجابات بالذكاء الاصطناعي سيكون بطيئًا جدًا على معظم أجهزة الكمبيوتر المحلية. للحصول على نتائج أسرع، أضف مفتاح OpenAI API الخاص بك أعلاه.'
-                    : 'AI answer generation will be very slow on most local computers. For faster results (5-10 seconds instead of 2-5 minutes), add your OpenAI API key above.'
-                  }
+                  {t('aiHelpBody')}
                 </p>
                 <a
                   href="https://platform.openai.com/api-keys"
@@ -127,7 +106,7 @@ export default function SettingsPanel({ isOpen, onClose, language = 'en' }: Sett
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:text-blue-700 underline mt-1 inline-block"
                 >
-                  {language === 'ar' ? 'احصل على مفتاح API' : 'Get an API key'}
+                  {t('aiHelpCTA')}
                 </a>
               </div>
             </div>
@@ -135,7 +114,7 @@ export default function SettingsPanel({ isOpen, onClose, language = 'en' }: Sett
 
           {saved && (
             <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-2 rounded-lg text-sm">
-              {text.savedMessage}
+              {t('saved')}
             </div>
           )}
         </div>
@@ -147,11 +126,11 @@ export default function SettingsPanel({ isOpen, onClose, language = 'en' }: Sett
               onClick={handleClear}
               className="text-red-600 hover:text-red-700 hover:bg-red-50"
             >
-              {text.clearButton}
+              {t('clear')}
             </Button>
           )}
           <Button onClick={handleSave}>
-            {text.saveButton}
+            {t('save')}
           </Button>
         </div>
       </div>

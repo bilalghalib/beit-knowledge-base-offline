@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -48,19 +49,26 @@ interface SearchResponse {
   answer: string;
   sources: Source[];
   numFound?: number;
-  insights?: any[];
+  insights?: InsightSource[];
 }
 
-const EXAMPLE_QUESTIONS = [
+const exampleListFallback = [
   'What hands-on activities worked best in training?',
   'What barriers prevent graduates from finding work?',
-  'How should we balance theory vs practice?',
-  'What cultural barriers affect green building adoption in Mosul?',
-  'What market opportunities exist for solar energy?',
-  'Which certification approaches are most valued by employers?',
 ];
 
 export default function SearchInterface() {
+  const t = useTranslations('home');
+  const tCommon = useTranslations('common');
+  const tCurriculum = useTranslations('curriculum');
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
+
+  const exampleQuestions = useMemo(() => {
+    const raw = t.raw('exampleQuestions');
+    return Array.isArray(raw) && raw.length > 0 ? (raw as string[]) : exampleListFallback;
+  }, [t]);
+
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<SearchResponse | null>(null);
@@ -69,7 +77,6 @@ export default function SearchInterface() {
   const [hasApiKey, setHasApiKey] = useState(false);
   const [expandedInsights, setExpandedInsights] = useState<Set<string>>(new Set());
 
-  // Check if API key exists
   useEffect(() => {
     const key = localStorage.getItem('openai_api_key');
     setHasApiKey(!!key);
@@ -84,7 +91,6 @@ export default function SearchInterface() {
     setResponse(null);
 
     try {
-      // Get OpenAI API key from localStorage if available
       const openaiApiKey = localStorage.getItem('openai_api_key') || undefined;
 
       const res = await fetch('/api/search-smart', {
@@ -105,7 +111,7 @@ export default function SearchInterface() {
       setResponse(data);
     } catch (err) {
       console.error('Search error:', err);
-      setError('Search failed. Please try again.');
+      setError(t('failed'));
     } finally {
       setLoading(false);
     }
@@ -145,15 +151,19 @@ export default function SearchInterface() {
     source_type: 'insight' as const
   })) || []);
 
+  const statusLabel = generateLLMAnswer
+    ? (hasApiKey ? t('loadingGenerating') : t('loadingGeneratingSlow'))
+    : t('loadingSearch');
+
   return (
-    <div>
+    <div dir={isRTL ? 'rtl' : 'ltr'}>
       {!response && !error && (
         <section className="mb-12 text-center">
           <h2 className="mb-4 text-4xl font-bold text-slate-900">
-            Ask the Experts
+            {t('heading')}
           </h2>
           <p className="mx-auto max-w-2xl text-lg text-slate-600">
-            Query 40+ bilingual insights gathered from BEIT Architecture, Solar, and Insulation trainers to plan sessions, spot barriers, and source authentic quotes.
+            {t('description')}
           </p>
         </section>
       )}
@@ -164,26 +174,27 @@ export default function SearchInterface() {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={handleKeyPress}
-            placeholder="Ask a question about BEIT training insights..."
+            placeholder={t('placeholder')}
             className="w-full resize-none px-6 py-5 text-lg text-slate-900 placeholder-slate-400 focus:outline-none"
             rows={3}
             disabled={loading}
+            dir={isRTL ? 'rtl' : 'ltr'}
           />
-          <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-6 py-4">
-            <div className="flex items-center gap-4">
-              <span className="text-xs text-slate-500">
+          <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4 md:flex-row md:items-center md:justify-between">
+            <div className={`flex flex-col gap-2 text-xs text-slate-500 ${isRTL ? 'md:text-right' : ''}`}>
+              <span>
                 {query.length > 0
-                  ? `${query.length} characters`
-                  : 'Press Enter to search'}
+                  ? t('characterCount', { count: query.length })
+                  : t('pressEnter')}
               </span>
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className="flex items-center gap-2 cursor-pointer text-slate-600">
                 <input
                   type="checkbox"
                   checked={generateLLMAnswer}
                   onChange={(e) => setGenerateLLMAnswer(e.target.checked)}
                   className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                 />
-                <span className="text-xs text-slate-600">Generate AI Answer (slower)</span>
+                <span className="text-xs">{t('generateAnswerLabel')}</span>
               </label>
             </div>
             <Button
@@ -195,7 +206,7 @@ export default function SearchInterface() {
               {loading ? (
                 <>
                   <svg
-                    className="-ml-1 mr-2 h-4 w-4 animate-spin"
+                    className={`${isRTL ? 'ml-2' : '-ml-1 mr-2'} h-4 w-4 animate-spin`}
                     fill="none"
                     viewBox="0 0 24 24"
                   >
@@ -213,17 +224,13 @@ export default function SearchInterface() {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     />
                   </svg>
-                  {generateLLMAnswer && !hasApiKey
-                    ? 'Generating AI answer (this may take 2-5 minutes)...'
-                    : generateLLMAnswer
-                    ? 'Generating AI answer...'
-                    : 'Searching...'}
+                  {statusLabel}
                 </>
               ) : (
                 <>
-                  Search
+                  {tCommon('search')}
                   <svg
-                    className="ml-2 h-4 w-4"
+                    className={`${isRTL ? 'mr-2' : 'ml-2'} h-4 w-4`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -248,15 +255,10 @@ export default function SearchInterface() {
             <svg className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-amber-900 mb-1">AI generation will be very slow on local computer</p>
-              <p className="text-xs text-amber-800 mb-2">
-                Without an OpenAI API key, answer generation may take 2-5 minutes depending on your computer's resources.
-                With an API key, results arrive in 5-10 seconds.
-              </p>
-              <p className="text-xs text-amber-700">
-                Add an OpenAI API key in Settings (top right) for faster results, or uncheck "Generate AI Answer" for instant search results.
-              </p>
+            <div className="flex-1 text-sm text-amber-800 space-y-1">
+              <p className="font-semibold text-amber-900">{t('aiWarning.title')}</p>
+              <p>{t('aiWarning.body')}</p>
+              <p className="text-xs text-amber-700">{t('aiWarning.tip')}</p>
             </div>
           </div>
         </div>
@@ -273,10 +275,10 @@ export default function SearchInterface() {
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
             <div className="flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-blue-50 to-slate-50 px-8 py-6">
               <h3 className="text-xl font-semibold text-slate-900">
-                Expert Response
+                {t('responseHeading')}
               </h3>
               <Badge className="bg-blue-100 text-blue-700">
-                {sourceCount} {sourceCount === 1 ? 'source' : 'sources'}
+                {t('sourcesBadge', { count: sourceCount })}
               </Badge>
             </div>
             <div className="px-8 py-6">
@@ -289,7 +291,7 @@ export default function SearchInterface() {
           {displaySources.length > 0 && (
             <div>
               <p className="mb-4 px-1 text-sm font-semibold text-slate-600">
-                {sourceCount} {sourceCount === 1 ? 'SOURCE' : 'SOURCES'}
+                {t('sourcesHeader', { count: sourceCount })}
               </p>
               <div className="space-y-4">
                 {displaySources.map((source, index) => {
@@ -307,10 +309,10 @@ export default function SearchInterface() {
                             </span>
                             <div>
                               <p className="text-sm font-semibold text-slate-900">
-                                {curr.module} - Day {curr.day}
-                                {curr.session_number && `, Session ${curr.session_number}`}
+                                {curr.module} · {tCurriculum('day')} {curr.day}
+                                {curr.session_number && `, ${tCurriculum('session')} ${curr.session_number}`}
                               </p>
-                              <p className="text-xs text-slate-500">Curriculum Activity</p>
+                              <p className="text-xs text-slate-500">{t('curriculumBadge')}</p>
                             </div>
                           </div>
                           {typeof curr.similarity === 'number' && (
@@ -318,13 +320,13 @@ export default function SearchInterface() {
                               variant="secondary"
                               className="bg-emerald-100 text-emerald-700"
                             >
-                              {Math.round(curr.similarity * 100)}% match
+                              {t('matchLabel', { percent: Math.round(curr.similarity * 100) })}
                             </Badge>
                           )}
                         </div>
                         <div className="space-y-4 px-6 py-5">
                           <p className="text-sm font-medium text-slate-700">
-                            {curr.activity_name || 'Activity'}
+                            {curr.activity_name || t('activityFallback')}
                           </p>
                           {curr.purpose && (
                             <p className="text-sm text-slate-600">{curr.purpose}</p>
@@ -350,7 +352,7 @@ export default function SearchInterface() {
                               <p className="text-sm font-semibold text-slate-900">
                                 {meta.category}
                               </p>
-                              <p className="text-xs text-slate-500">Project Fact</p>
+                              <p className="text-xs text-slate-500">{t('metadataBadge')}</p>
                             </div>
                           </div>
                           {typeof meta.similarity === 'number' && (
@@ -358,7 +360,7 @@ export default function SearchInterface() {
                               variant="secondary"
                               className="bg-purple-100 text-purple-700"
                             >
-                              {Math.round(meta.similarity * 100)}% match
+                              {t('matchLabel', { percent: Math.round(meta.similarity * 100) })}
                             </Badge>
                           )}
                         </div>
@@ -379,9 +381,9 @@ export default function SearchInterface() {
                     >
                       <button
                         onClick={() => toggleInsightExpansion(insight.id)}
-                        className="w-full text-left transition-colors hover:bg-slate-50/50"
+                        className={`w-full transition-colors hover:bg-slate-50/50 ${isRTL ? 'text-right' : 'text-left'}`}
                       >
-                        <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-6 py-4">
+                        <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 px-6 py-4 md:flex-row md:items-center md:justify-between">
                           <div className="flex items-center gap-3 flex-1">
                             <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
                               {index + 1}
@@ -408,7 +410,7 @@ export default function SearchInterface() {
                               variant="secondary"
                               className="bg-slate-100 text-slate-600 ml-2"
                             >
-                              {Math.round(insight.similarity * 100)}% match
+                              {t('matchLabel', { percent: Math.round(insight.similarity * 100) })}
                             </Badge>
                           )}
                         </div>
@@ -420,28 +422,25 @@ export default function SearchInterface() {
                       </div>
                       {isExpanded && (
                         <div className="space-y-4 px-6 pb-5 border-t border-slate-100 pt-4">
-                          {/* 1. Context & Analysis First */}
                           {insight.context_notes_english && (
                             <div>
-                              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Context & Analysis</p>
+                              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">{t('contextLabel')}</p>
                               <p className="text-sm text-slate-600 leading-relaxed">
                                 {insight.context_notes_english}
                               </p>
                             </div>
                           )}
-                          {/* 2. Quote (English) */}
                           {insight.quote_english && (
                             <div>
-                              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Quote (English)</p>
+                              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">{t('quoteEnglishLabel')}</p>
                               <blockquote className="rounded-r border-l-4 border-blue-400 bg-blue-50/50 px-4 py-3 text-sm italic text-slate-700">
                                 &ldquo;{insight.quote_english}&rdquo;
                               </blockquote>
                             </div>
                           )}
-                          {/* 3. Quote (Arabic) */}
                           {insight.quote_arabic && (
                             <div>
-                              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Quote (Arabic)</p>
+                              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">{t('quoteArabicLabel')}</p>
                               <blockquote
                                 className="rounded-l border-r-4 border-blue-400 bg-blue-50/50 px-4 py-3 text-sm italic text-slate-700"
                                 dir="rtl"
@@ -450,10 +449,9 @@ export default function SearchInterface() {
                               </blockquote>
                             </div>
                           )}
-                          {/* 4. Tags */}
                           {insight.tags_english && (
                             <div>
-                              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Tags</p>
+                              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">{t('tagsLabel')}</p>
                               <div className="flex flex-wrap gap-2">
                                 {insight.tags_english.split(',').map((tag, idx) => (
                                   <Badge key={idx} variant="outline" className="text-xs bg-slate-50 text-slate-700 border-slate-300">
@@ -463,10 +461,9 @@ export default function SearchInterface() {
                               </div>
                             </div>
                           )}
-                          {/* 5. Priority Last */}
                           {insight.priority && (
                             <div className="flex items-center gap-2">
-                              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Priority:</span>
+                              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('priorityLabel')}:</span>
                               <Badge className={`text-xs ${
                                 insight.priority.toLowerCase() === 'critical' ? 'bg-red-100 text-red-700' :
                                 insight.priority.toLowerCase() === 'high' ? 'bg-orange-100 text-orange-700' :
@@ -487,7 +484,7 @@ export default function SearchInterface() {
 
           <div className="pt-2 text-center">
             <Button variant="outline" onClick={handleReset}>
-              Ask Another Question
+              {t('askAnother')}
             </Button>
           </div>
         </section>
@@ -496,15 +493,16 @@ export default function SearchInterface() {
       {!response && !error && (
         <section>
           <p className="mb-4 px-1 text-sm font-semibold text-slate-600">
-            TRY ASKING
+            {t('tryAsking')}
           </p>
           <div className="grid gap-3 md:grid-cols-2">
-            {EXAMPLE_QUESTIONS.map((example) => (
+            {exampleQuestions.map((example) => (
               <button
                 key={example}
                 onClick={() => setQuery(example)}
                 className="group rounded-xl border border-slate-200 bg-white px-5 py-4 text-left transition-all hover:border-blue-300 hover:shadow-md"
                 type="button"
+                dir={isRTL ? 'rtl' : 'ltr'}
               >
                 <p className="text-sm text-slate-700 transition-colors group-hover:text-blue-700">
                   {example}
