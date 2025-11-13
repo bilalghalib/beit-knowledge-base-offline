@@ -1,0 +1,26 @@
+  • electron-builder  version=26.0.12 os=24.6.0
+  • loaded configuration  file=package.json ("build" field)
+  • skipped dependencies rebuild  reason=npmRebuild is set to false
+  • packaging       platform=darwin arch=arm64 electron=39.1.0 appOutDir=dist/mac-arm64
+  • asar usage is disabled — this is strongly not recommended  solution=enable asar and use asarUnpack to unpack files that must be externally available
+(node:5894) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+  • asar usage is disabled — this is strongly not recommended  solution=enable asar and use asarUnpack to unpack files that must be externally available
+  • skipped macOS application code signing  reason=cannot find valid "Developer ID Application" identity or custom non-Apple code signing certificate, it could cause some undefined behaviour, e.g. macOS localized description not visible, see https://electron.build/code-signing allIdentities=  1) 606275889755EE6651A9B5F4F38523A98F3CF9DE "Apple Development: Bilal Ghalib (YKLKB23N6T)" (CSSMERR_TP_CERT_EXPIRED)
+  2) 5615F25410512B683786F13F5891FFA5EAA8747C "Apple Development: Bilal Ghalib (Q6Q434629Z)" (CSSMERR_TP_CERT_EXPIRED)
+  3) 045924C8D802FA8B72D5DEBC1226C0F3D8A3581D "Apple Distribution: Bloom.pm LLP (757SV3P6D8)" (CSSMERR_TP_CERT_EXPIRED)
+  4) C824AEBF1C0FBF9712C4596AE01EDAA6AE901121 "Apple Distribution: Bloom.pm LLP (757SV3P6D8)" (CSSMERR_TP_CERT_EXPIRED)
+  5) 93ED8CB6C2DB160C8CA34AE4E4FD729476A5152C "Apple Development: bilal@bloom.pm (5AK5T7QNDL)" (CSSMERR_TP_CERT_EXPIRED)
+  6) 88A3AFE1804440C76DD9E429C26F5BE226B7CDAF "Apple Development: Bilal Ghalib (YKLKB23N6T)" (CSSMERR_TP_CERT_EXPIRED)
+  7) F6F5F80E3B0515FF2FD40820D7A7BDFB674E02FC "mac.home" (CSSMERR_TP_CERT_EXPIRED)
+     7 identities found
+                                                Valid identities only
+     0 valid identities found
+  • building        target=DMG arch=arm64 file=dist/BEIT Knowledge Base-0.1.0-mac.dmg
+  • building        target=macOS zip arch=arm64 file=dist/BEIT Knowledge Base-0.1.0-mac.zip
+  • skipped dependencies rebuild  reason=npmRebuild is set to false
+  • packaging       platform=win32 arch=x64 electron=39.1.0 appOutDir=dist/win-unpacked
+  • asar usage is disabled — this is strongly not recommended  solution=enable asar and use asarUnpack to unpack files that must be externally available
+  • asar usage is disabled — this is strongly not recommended  solution=enable asar and use asarUnpack to unpack files that must be externally available
+  • signing with signtool.exe  path=dist/win-unpacked/BEIT Knowledge Base.exe
+  • building block map  blockMapFile=dist/BEIT Knowledge Base-0.1.0-mac.dmg.blockmap

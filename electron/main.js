@@ -56,7 +56,9 @@ async function startNextServer() {
       process.env.PORT = '3335';
       process.env.HOSTNAME = 'localhost';
 
-      nextProcess = spawn('node', ['server.js'], {
+      // Use process.execPath (Electron's bundled Node) instead of 'node'
+      // This ensures it works on Windows where 'node' might not be in PATH
+      nextProcess = spawn(process.execPath, ['server.js'], {
         cwd: standalonePath, // Run from standalone directory
         stdio: ['ignore', 'pipe', 'pipe'],
         detached: false,
@@ -170,9 +172,10 @@ async function createWindow() {
     icon: path.join(__dirname, '../public/icon.png'),
   });
 
-  // Open DevTools for debugging
-  // Temporarily enabled in production to diagnose startup issues
-  mainWindow.webContents.openDevTools();
+  // Open DevTools for debugging (only in development)
+  if (!app.isPackaged) {
+    mainWindow.webContents.openDevTools();
+  }
 
   // Show loading screen
   mainWindow.loadFile(path.join(__dirname, 'loading.html'));
@@ -200,7 +203,24 @@ async function createWindow() {
 }
 
 // App lifecycle
-app.whenReady().then(createWindow);
+// Prevent multiple instances
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  // Another instance is already running, quit this one
+  app.quit();
+} else {
+  // This is the first instance, handle second-instance events
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    // Someone tried to run a second instance, focus our window instead
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+
+  app.whenReady().then(createWindow);
+}
 
 app.on('window-all-closed', () => {
   if (nextProcess) {
