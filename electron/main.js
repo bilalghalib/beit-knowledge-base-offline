@@ -1,6 +1,6 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
-import { spawn } from 'child_process';
+import { spawn, fork } from 'child_process';
 import http from 'http';
 import { fileURLToPath } from 'url';
 
@@ -56,11 +56,11 @@ async function startNextServer() {
       process.env.PORT = '3335';
       process.env.HOSTNAME = 'localhost';
 
-      // Use process.execPath (Electron's bundled Node) instead of 'node'
-      // This ensures it works on Windows where 'node' might not be in PATH
-      nextProcess = spawn(process.execPath, ['server.js'], {
+      // Use fork() which properly spawns Node.js processes on all platforms
+      // fork() automatically uses the correct Node binary (Electron's bundled Node)
+      nextProcess = fork(serverPath, [], {
         cwd: standalonePath, // Run from standalone directory
-        stdio: ['ignore', 'pipe', 'pipe'],
+        stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
         detached: false,
         env: {
           ...process.env,
