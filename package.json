@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "postbuild": "node scripts/copy-native-libs.js",
+    "postbuild": "node scripts/setup-standalone.js && node scripts/copy-native-libs.js",
     "start": "next start -p 3335",
     "lint": "eslint",
     "seed": "node scripts/offline/seed.js",

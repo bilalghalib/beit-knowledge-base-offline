@@ -3,49 +3,14 @@
   • skipped dependencies rebuild  reason=npmRebuild is set to false
   • packaging       platform=win32 arch=x64 electron=39.1.0 appOutDir=dist/win-unpacked
   • asar usage is disabled — this is strongly not recommended  solution=enable asar and use asarUnpack to unpack files that must be externally available
-(node:12867) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(node:42257) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
 (Use `node --trace-deprecation ...` to show where the warning was created)
   • asar usage is disabled — this is strongly not recommended  solution=enable asar and use asarUnpack to unpack files that must be externally available
   • signing with signtool.exe  path=dist/win-unpacked/BEIT Knowledge Base.exe
   • building        target=nsis file=dist/BEIT Knowledge Base-0.1.0-setup.exe archs=x64 oneClick=false perMachine=false
   • signing with signtool.exe  path=dist/win-unpacked/resources/elevate.exe
-  ⨯ Exit code: 2. Command failed: /Users/bilalghalib/Projects/scripts/beit-knowledge-base-offline/node_modules/7zip-bin/mac/arm64/7za a -bd -mx=9 -md=1m -mtc=off -ms=off -mtm=off -mta=off /Users/bilalghalib/Projects/scripts/beit-knowledge-base-offline/dist/beit-knowledge-base-0.1.0-x64.nsis.7z . -xr!*.avi -xr!*.mov -xr!*.m4v -xr!*.mp4 -xr!*.m4p -xr!*.qt -xr!*.mkv -xr!*.webm -xr!*.vmdk
-
-
-System ERROR:
-E_FAIL
-
-
-7-Zip (a) [64] 16.02 : Copyright (c) 1999-2016 Igor Pavlov : 2016-05-21
-p7zip Version 16.02 (locale=utf8,Utf16=on,HugeFiles=on,64 bits,8 CPUs LE)
-
-Scanning the drive:
-1630 folders, 12459 files, 1896200753 bytes (1809 MiB)
-
-Creating archive: /Users/bilalghalib/Projects/scripts/beit-knowledge-base-offline/dist/beit-knowledge-base-0.1.0-x64.nsis.7z
-
-Items to compress: 14089
-
-
-
-
-System ERROR:
-E_FAIL
-  failedTask=build stackTrace=Error: Exit code: 2. Command failed: /Users/bilalghalib/Projects/scripts/beit-knowledge-base-offline/node_modules/7zip-bin/mac/arm64/7za a -bd -mx=9 -md=1m -mtc=off -ms=off -mtm=off -mta=off /Users/bilalghalib/Projects/scripts/beit-knowledge-base-offline/dist/beit-knowledge-base-0.1.0-x64.nsis.7z . -xr!*.avi -xr!*.mov -xr!*.m4v -xr!*.mp4 -xr!*.m4p -xr!*.qt -xr!*.mkv -xr!*.webm -xr!*.vmdk
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                System ERROR:
-E_FAIL
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                7-Zip (a) [64] 16.02 : Copyright (c) 1999-2016 Igor Pavlov : 2016-05-21
-p7zip Version 16.02 (locale=utf8,Utf16=on,HugeFiles=on,64 bits,8 CPUs LE)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                Scanning the drive:
-1630 folders, 12459 files, 1896200753 bytes (1809 MiB)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                Creating archive: /Users/bilalghalib/Projects/scripts/beit-knowledge-base-offline/dist/beit-knowledge-base-0.1.0-x64.nsis.7z
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                Items to compress: 14089
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                System ERROR:
-E_FAIL
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    at /Users/bilalghalib/Projects/scripts/beit-knowledge-base-offline/node_modules/builder-util/src/util.ts:142:18
-    at ChildProcess.exithandler (node:child_process:422:5)
-    at ChildProcess.emit (node:events:507:28)
-    at maybeClose (node:internal/child_process:1101:16)
-    at Socket.<anonymous> (node:internal/child_process:457:11)
-    at Socket.emit (node:events:507:28)
-    at Pipe.<anonymous> (node:net:346:12)
+  • signing with signtool.exe  path=dist/__uninstaller-nsis-beit-knowledge-base.exe
+  • signing with signtool.exe  path=dist/BEIT Knowledge Base-0.1.0-setup.exe
+  • building block map  blockMapFile=dist/BEIT Knowledge Base-0.1.0-setup.exe.blockmap
+  • building        target=portable file=dist/BEIT Knowledge Base-0.1.0-portable.exe archs=x64
+  • signing with signtool.exe  path=dist/BEIT Knowledge Base-0.1.0-portable.exe

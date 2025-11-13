@@ -3,7 +3,7 @@
   • skipped dependencies rebuild  reason=npmRebuild is set to false
   • packaging       platform=darwin arch=arm64 electron=39.1.0 appOutDir=dist/mac-arm64
   • asar usage is disabled — this is strongly not recommended  solution=enable asar and use asarUnpack to unpack files that must be externally available
-(node:9332) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(node:47137) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
 (Use `node --trace-deprecation ...` to show where the warning was created)
   • asar usage is disabled — this is strongly not recommended  solution=enable asar and use asarUnpack to unpack files that must be externally available
   • skipped macOS application code signing  reason=cannot find valid "Developer ID Application" identity or custom non-Apple code signing certificate, it could cause some undefined behaviour, e.g. macOS localized description not visible, see https://electron.build/code-signing allIdentities=  1) 606275889755EE6651A9B5F4F38523A98F3CF9DE "Apple Development: Bilal Ghalib (YKLKB23N6T)" (CSSMERR_TP_CERT_EXPIRED)
@@ -19,3 +19,4 @@
   • building        target=DMG arch=arm64 file=dist/BEIT Knowledge Base-0.1.0-mac.dmg
   • building        target=macOS zip arch=arm64 file=dist/BEIT Knowledge Base-0.1.0-mac.zip
   • building block map  blockMapFile=dist/BEIT Knowledge Base-0.1.0-mac.dmg.blockmap
+  • building block map  blockMapFile=dist/BEIT Knowledge Base-0.1.0-mac.zip.blockmap
