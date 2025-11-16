@@ -20,7 +20,12 @@ const __dirname = path.dirname(__filename);
 
 // Configure where models are stored
 const MODELS_DIR = path.join(__dirname, '..', 'models', 'transformers');
+
+// Set both environment variables to ensure Transformers.js uses our cache directory
 env.cacheDir = MODELS_DIR;
+env.localModelPath = MODELS_DIR;
+env.allowRemoteModels = true; // Allow download
+env.allowLocalModels = true;  // Allow caching
 
 const MODEL_NAME = 'Xenova/bge-large-en-v1.5';
 
@@ -70,28 +75,62 @@ async function downloadModel() {
     console.log('✅ Model test successful!');
     console.log(`   Generated ${embedding.length}-dimensional embedding`);
 
-    // Show model location
+    // Show model location and verify structure
     console.log('\n📁 Model location:', MODELS_DIR);
+
+    // List what was actually downloaded
+    const listDirectory = (dirPath, prefix = '') => {
+      if (!fs.existsSync(dirPath)) {
+        console.warn(`   Warning: Directory doesn't exist: ${dirPath}`);
+        return;
+      }
+
+      const files = fs.readdirSync(dirPath, { withFileTypes: true });
+      for (const file of files) {
+        if (file.isDirectory()) {
+          console.log(`   ${prefix}📁 ${file.name}/`);
+          if (file.name.startsWith('models--')) {
+            // Don't recurse into model directories (too verbose)
+            console.log(`   ${prefix}   (model files inside)`);
+          } else {
+            listDirectory(path.join(dirPath, file.name), prefix + '  ');
+          }
+        } else {
+          const filePath = path.join(dirPath, file.name);
+          const stats = fs.statSync(filePath);
+          const sizeMB = (stats.size / (1024 * 1024)).toFixed(2);
+          console.log(`   ${prefix}📄 ${file.name} (${sizeMB} MB)`);
+        }
+      }
+    };
+
+    console.log('\n📂 Downloaded files:');
+    listDirectory(MODELS_DIR);
 
     // Check actual size
     const getDirectorySize = (dirPath) => {
       let size = 0;
-      const files = fs.readdirSync(dirPath, { withFileTypes: true });
+      try {
+        const files = fs.readdirSync(dirPath, { withFileTypes: true });
 
-      for (const file of files) {
-        const filePath = path.join(dirPath, file.name);
-        if (file.isDirectory()) {
-          size += getDirectorySize(filePath);
-        } else {
-          size += fs.statSync(filePath).size;
+        for (const file of files) {
+          const filePath = path.join(dirPath, file.name);
+          if (file.isDirectory()) {
+            size += getDirectorySize(filePath);
+          } else {
+            size += fs.statSync(filePath).size;
+          }
         }
+      } catch (err) {
+        console.warn(`   Warning: Could not calculate size for ${dirPath}: ${err.message}`);
       }
       return size;
     };
 
-    const totalSize = getDirectorySize(MODELS_DIR);
+    const modelsRoot = path.join(__dirname, '..', 'models');
+    const totalSize = getDirectorySize(modelsRoot);
     const sizeMB = (totalSize / (1024 * 1024)).toFixed(2);
-    console.log(`💾 Total model size: ${sizeMB} MB`);
+    console.log(`\n💾 Total model size: ${sizeMB} MB`);
 
     console.log('\n📋 Next steps:');
     console.log('   1. Run: npm run precompute-embeddings:transformers');

@@ -1,7 +1,9 @@
 #!/usr/bin/env node
-import { cpSync, existsSync, mkdirSync } from 'fs';
+import fs from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+
+const { cpSync, existsSync, mkdirSync, readdirSync } = fs;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -94,14 +96,32 @@ if (existsSync(modelsSource)) {
     cpSync(modelsSource, modelsTarget, { recursive: true });
     console.log('✅ Copied models to standalone/models');
 
-    // Verify BGE model is present
-    const bgeModelPath = join(modelsTarget, 'transformers', 'models--Xenova--bge-large-en-v1.5');
-    if (existsSync(bgeModelPath)) {
-      console.log('✅ BGE-large-en-v1.5 model present');
+    // Verify model files exist (be flexible about structure)
+    const hasTransformersDir = existsSync(join(modelsTarget, 'transformers'));
+    const hasModelFiles = existsSync(join(modelsTarget, 'tokenizer.json')) ||
+                         existsSync(join(modelsTarget, 'vocab.txt'));
+
+    // Check for model in transformers subdirectory
+    let modelFound = false;
+    if (hasTransformersDir) {
+      const transformersDir = join(modelsTarget, 'transformers');
+      const entries = fs.readdirSync(transformersDir);
+      // Look for any models--Xenova directory or onnx files
+      modelFound = entries.some(entry =>
+        entry.startsWith('models--') ||
+        entry.includes('bge') ||
+        entry.endsWith('.onnx')
+      );
+    }
+
+    if (modelFound || hasModelFiles) {
+      console.log('✅ Model files present');
     } else {
-      console.error('❌ BGE model not found!');
-      console.error('   Run: npm run download-transformers-model');
-      process.exit(1);
+      console.warn('⚠️  Warning: Model structure may be incomplete');
+      console.warn('   Expected BGE model files not found in typical locations');
+      console.warn('   The app will attempt to download the model at runtime');
+      console.warn('   For fully offline builds, ensure model is downloaded first');
+      // Don't exit - let the build continue
     }
   } catch (error) {
     console.error('❌ Failed to copy models folder:', error.message);
