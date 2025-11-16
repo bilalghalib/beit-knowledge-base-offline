@@ -63,8 +63,12 @@
       ".next/standalone/**/*",
       ".next/static/**/*",
       "electron/**/*",
+      "data/**/*",
+      "models/**/*",
       "package.json",
-      "!.next/standalone/node_modules/.cache/**/*"
+      "!.next/standalone/node_modules/.cache/**/*",
+      "!models/**/*.safetensors.index.json",
+      "!data/**/*.backup.*"
     ],
     "asar": false,
     "npmRebuild": false,

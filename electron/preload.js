@@ -21,4 +21,9 @@ contextBridge.exposeInMainWorld('electron', {
   onDependencyIssues: (callback) => {
     ipcRenderer.on('dependency-issues', (event, issues) => callback(issues));
   },
+
+  // Listen for critical startup errors
+  onCriticalStartupError: (callback) => {
+    ipcRenderer.on('critical-startup-error', (event, data) => callback(data));
+  },
 });

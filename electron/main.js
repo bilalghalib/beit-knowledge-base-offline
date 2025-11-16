@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
+import fs from 'fs';
 import { spawn, fork } from 'child_process';
 import http from 'http';
 import { fileURLToPath } from 'url';
@@ -28,9 +29,125 @@ async function checkService(url, serviceName) {
   }
 }
 
-// Dependency check placeholder (all core services run in-app now)
+// Comprehensive startup validation
 async function checkDependencies() {
-  return [];
+  const issues = [];
+
+  try {
+    // Determine base path based on whether app is packaged
+    const basePath = app.isPackaged
+      ? path.join(process.resourcesPath, 'app')
+      : app.getAppPath();
+
+    console.log('🔍 Validating installation from:', basePath);
+
+    // Check data directory exists
+    const dataDir = path.join(basePath, 'data');
+    if (!fs.existsSync(dataDir)) {
+      issues.push({
+        severity: 'critical',
+        message: 'Data directory is missing',
+        path: dataDir,
+        fix: 'Reinstall the application. The data directory was not bundled correctly.'
+      });
+    } else {
+      // Check individual embedding files
+      const requiredDataFiles = [
+        'insights_embedded_1024.json',
+        'curriculum_embedded_1024.json',
+        'metadata_embedded_1024.json'
+      ];
+
+      for (const file of requiredDataFiles) {
+        const filePath = path.join(dataDir, file);
+        if (!fs.existsSync(filePath)) {
+          issues.push({
+            severity: 'critical',
+            message: `Missing required embedding file: ${file}`,
+            path: filePath,
+            fix: 'Reinstall the application or run: npm run precompute-embeddings'
+          });
+        } else {
+          // Check file size (should be > 100KB)
+          const stats = fs.statSync(filePath);
+          if (stats.size < 100000) {
+            issues.push({
+              severity: 'critical',
+              message: `Embedding file is too small (corrupted?): ${file}`,
+              path: filePath,
+              fix: 'File may be corrupted. Reinstall the application.'
+            });
+          } else {
+            console.log(`✅ ${file}: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
+          }
+        }
+      }
+    }
+
+    // Check models directory
+    const modelsDir = path.join(basePath, 'models', 'transformers');
+    if (!fs.existsSync(modelsDir)) {
+      issues.push({
+        severity: 'critical',
+        message: 'Transformers.js models directory is missing',
+        path: modelsDir,
+        fix: 'Reinstall the application or run: npm run download-transformers-model'
+      });
+    } else {
+      // Check for BGE model
+      const modelPath = path.join(modelsDir, 'models--Xenova--bge-large-en-v1.5');
+      if (!fs.existsSync(modelPath)) {
+        issues.push({
+          severity: 'critical',
+          message: 'BGE-large-en-v1.5 model is missing',
+          path: modelPath,
+          fix: 'Model not found. Run: npm run download-transformers-model'
+        });
+      } else {
+        console.log('✅ BGE model found');
+      }
+    }
+
+    // Check .next/standalone directory in packaged app
+    if (app.isPackaged) {
+      const standalonePath = path.join(process.resourcesPath, 'app', '.next', 'standalone');
+      if (!fs.existsSync(standalonePath)) {
+        issues.push({
+          severity: 'critical',
+          message: 'Next.js standalone build is missing',
+          path: standalonePath,
+          fix: 'Application was not built correctly. Rebuild with: npm run build'
+        });
+      } else {
+        console.log('✅ Standalone build found');
+      }
+    }
+
+    // Memory check (warn if low)
+    const totalMem = require('os').totalmem();
+    const freeMem = require('os').freemem();
+    const totalGB = (totalMem / 1024 / 1024 / 1024).toFixed(2);
+    const freeGB = (freeMem / 1024 / 1024 / 1024).toFixed(2);
+
+    console.log(`💾 System memory: ${freeGB}GB free / ${totalGB}GB total`);
+
+    if (freeMem < 1 * 1024 * 1024 * 1024) { // Less than 1GB free
+      issues.push({
+        severity: 'warning',
+        message: `Low system memory: ${freeGB}GB free`,
+        fix: 'Close other applications to free up memory'
+      });
+    }
+
+  } catch (error) {
+    issues.push({
+      severity: 'critical',
+      message: `Validation failed: ${error.message}`,
+      fix: 'Contact support with this error message'
+    });
+  }
+
+  return issues;
 }
 
 // Start Next.js server
@@ -180,12 +297,55 @@ async function createWindow() {
   // Show loading screen
   mainWindow.loadFile(path.join(__dirname, 'loading.html'));
 
-  // Dependencies are optional now; skip blocking checks
+  // Run comprehensive dependency checks
   const finalIssues = await checkDependencies();
-  if (finalIssues.length > 0) {
-    console.error('⚠️  Optional dependency notices:', finalIssues);
+
+  // Separate critical from warning issues
+  const criticalIssues = finalIssues.filter(i => i.severity === 'critical');
+  const warningIssues = finalIssues.filter(i => i.severity === 'warning');
+
+  if (criticalIssues.length > 0) {
+    console.error('🔴 CRITICAL ERRORS DETECTED:');
+    criticalIssues.forEach(issue => {
+      console.error(`  - ${issue.message}`);
+      console.error(`    Path: ${issue.path || 'N/A'}`);
+      console.error(`    Fix: ${issue.fix}`);
+    });
+
+    // Collect diagnostics
+    const diagnostics = {
+      platform: process.platform,
+      arch: process.arch,
+      nodeVersion: process.version,
+      electronVersion: process.versions.electron,
+      appPath: app.getAppPath(),
+      resourcesPath: app.isPackaged ? process.resourcesPath : 'N/A (dev mode)',
+      isPackaged: app.isPackaged,
+      cwd: process.cwd(),
+      totalMemory: `${(require('os').totalmem() / 1024 / 1024 / 1024).toFixed(2)} GB`,
+      freeMemory: `${(require('os').freemem() / 1024 / 1024 / 1024).toFixed(2)} GB`
+    };
+
+    // Show error screen with details
+    mainWindow.loadFile(path.join(__dirname, 'error.html'));
     mainWindow.webContents.once('did-finish-load', () => {
-      mainWindow.webContents.send('dependency-issues', finalIssues);
+      mainWindow.webContents.send('critical-startup-error', {
+        issues: criticalIssues,
+        diagnostics
+      });
+    });
+
+    // Don't start the server if there are critical issues
+    mainWindow.on('closed', () => {
+      mainWindow = null;
+    });
+    return;
+  }
+
+  if (warningIssues.length > 0) {
+    console.warn('⚠️  Warning notices:', warningIssues);
+    mainWindow.webContents.once('did-finish-load', () => {
+      mainWindow.webContents.send('dependency-issues', warningIssues);
     });
   }
 
@@ -195,6 +355,9 @@ async function createWindow() {
     mainWindow.loadURL('http://localhost:3335');
   } else {
     mainWindow.loadFile(path.join(__dirname, 'error.html'));
+    mainWindow.webContents.once('did-finish-load', () => {
+      mainWindow.webContents.send('server-error', 'Next.js server failed to start within timeout period');
+    });
   }
 
   mainWindow.on('closed', () => {
