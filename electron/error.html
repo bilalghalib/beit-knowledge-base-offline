@@ -78,6 +78,52 @@
       font-size: 13px;
     }
 
+    .diagnostics {
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      text-align: left;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .diagnostics h3 {
+      font-size: 14px;
+      margin-bottom: 12px;
+      font-weight: 600;
+      color: #ffd700;
+    }
+
+    .diagnostics pre {
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      opacity: 0.9;
+    }
+
+    .error-detail {
+      background: rgba(255, 255, 255, 0.1);
+      border-left: 3px solid #ffd700;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 4px;
+    }
+
+    .error-detail strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+
+    .error-detail p {
+      font-size: 13px;
+      margin: 0;
+      opacity: 0.95;
+    }
+
     .button {
       display: inline-block;
       background: white;
@@ -86,7 +132,7 @@
       border-radius: 6px;
       text-decoration: none;
       font-weight: 600;
-      margin-top: 20px;
+      margin: 8px;
       cursor: pointer;
       border: none;
       font-size: 16px;
@@ -100,24 +146,39 @@
     .button:active {
       transform: scale(0.95);
     }
+
+    .button-secondary {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="icon">⚠️</div>
     <h1>Failed to Start Knowledge Base</h1>
-    <p>An unexpected error occurred while starting the application.</p>
+    <p id="error-message">An unexpected error occurred while starting the application.</p>
+
+    <div id="error-details" class="diagnostics" style="display: none;">
+      <h3>🔍 Error Details</h3>
+      <div id="error-list"></div>
+    </div>
+
+    <div id="diagnostics-info" class="diagnostics" style="display: none;">
+      <h3>📊 System Diagnostics</h3>
+      <pre id="diagnostics-content"></pre>
+    </div>
 
     <div class="error-box">
       <h3>Troubleshooting:</h3>
       <ol>
         <li>
-          <strong>Check your system resources:</strong><br>
-          Ensure you have enough free memory (at least 2GB recommended)
+          <strong>Check error details above:</strong><br>
+          Look for missing files or configuration issues
         </li>
         <li>
-          <strong>Close other applications:</strong><br>
-          Try closing other memory-intensive applications and restart
+          <strong>Check your system resources:</strong><br>
+          Ensure you have enough free memory (at least 2GB recommended)
         </li>
         <li>
           <strong>Reinstall the application:</strong><br>
@@ -127,18 +188,127 @@
     </div>
 
     <p style="font-size: 14px; opacity: 0.8;">
-      If the problem continues, please contact support for assistance.
+      If the problem continues, please share the error details above with support.
     </p>
 
+    <button class="button" onclick="copyDiagnostics()">📋 Copy Error Details</button>
+    <button class="button button-secondary" onclick="toggleDiagnostics()">🔧 Toggle Full Diagnostics</button>
     <button class="button" onclick="window.close()">Close Application</button>
   </div>
 
   <script>
-    // Listen for server errors from main process
+    let fullDiagnostics = null;
+    let errorDetails = null;
+
+    // Listen for errors from main process
     if (window.electron) {
       window.electron.onServerError((message) => {
         console.error('Server error:', message);
+        document.getElementById('error-message').textContent = message || 'An unexpected error occurred.';
       });
+
+      window.electron.onDependencyIssues((issues) => {
+        console.error('Dependency issues:', issues);
+        if (issues && issues.length > 0) {
+          showErrorDetails(issues);
+        }
+      });
+
+      // New listener for critical startup errors
+      if (window.electron.onCriticalStartupError) {
+        window.electron.onCriticalStartupError((data) => {
+          console.error('Critical startup error:', data);
+          if (data.issues && data.issues.length > 0) {
+            showErrorDetails(data.issues);
+          }
+          if (data.diagnostics) {
+            fullDiagnostics = data.diagnostics;
+          }
+        });
+      }
+    }
+
+    function showErrorDetails(issues) {
+      errorDetails = issues;
+      const errorList = document.getElementById('error-list');
+      const errorDetailsDiv = document.getElementById('error-details');
+
+      errorList.innerHTML = '';
+      issues.forEach((issue, index) => {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-detail';
+
+        const severityIcon = issue.severity === 'critical' ? '🔴' : '⚠️';
+        errorDiv.innerHTML = `
+          <strong>${severityIcon} ${issue.severity?.toUpperCase() || 'ERROR'}</strong>
+          <p>${issue.message || 'Unknown error'}</p>
+          ${issue.fix ? `<p style="margin-top: 8px; opacity: 0.8;"><em>Fix: ${issue.fix}</em></p>` : ''}
+          ${issue.path ? `<p style="margin-top: 4px; font-size: 11px; opacity: 0.7;">Path: ${issue.path}</p>` : ''}
+        `;
+        errorList.appendChild(errorDiv);
+      });
+
+      errorDetailsDiv.style.display = 'block';
+    }
+
+    function toggleDiagnostics() {
+      const diagDiv = document.getElementById('diagnostics-info');
+      const diagContent = document.getElementById('diagnostics-content');
+
+      if (diagDiv.style.display === 'none') {
+        // Collect diagnostics
+        const diag = {
+          timestamp: new Date().toISOString(),
+          platform: navigator.platform,
+          userAgent: navigator.userAgent,
+          language: navigator.language,
+          onLine: navigator.onLine,
+          memory: performance.memory ? {
+            usedJSHeapSize: (performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(2) + ' MB',
+            totalJSHeapSize: (performance.memory.totalJSHeapSize / 1024 / 1024).toFixed(2) + ' MB',
+            jsHeapSizeLimit: (performance.memory.jsHeapSizeLimit / 1024 / 1024).toFixed(2) + ' MB'
+          } : 'Not available',
+          errorDetails: errorDetails || 'No error details available',
+          fullDiagnostics: fullDiagnostics || 'Not available'
+        };
+
+        diagContent.textContent = JSON.stringify(diag, null, 2);
+        diagDiv.style.display = 'block';
+      } else {
+        diagDiv.style.display = 'none';
+      }
+    }
+
+    function copyDiagnostics() {
+      const diagText = document.getElementById('diagnostics-content').textContent;
+      const errorText = document.getElementById('error-list').innerText;
+
+      const fullText = `BEIT Knowledge Base - Error Report
+Generated: ${new Date().toISOString()}
+
+ERROR DETAILS:
+${errorText || 'No error details available'}
+
+SYSTEM DIAGNOSTICS:
+${diagText || 'Click "Toggle Full Diagnostics" first'}
+`;
+
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(fullText).then(() => {
+          alert('Error details copied to clipboard!');
+        }).catch(() => {
+          // Fallback
+          const textarea = document.createElement('textarea');
+          textarea.value = fullText;
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+          alert('Error details copied to clipboard!');
+        });
+      } else {
+        alert('Clipboard not available. Please manually copy the error details.');
+      }
     }
   </script>
 </body>
