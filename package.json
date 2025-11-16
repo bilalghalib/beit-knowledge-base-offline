@@ -94,7 +94,9 @@
         }
       ],
       "icon": "public/icon.png",
-      "artifactName": "${productName}-${version}-win-${arch}.${ext}"
+      "artifactName": "${productName}-${version}-win-${arch}.${ext}",
+      "sign": null,
+      "signingHashAlgorithms": null
     },
     "nsis": {
       "oneClick": false,
