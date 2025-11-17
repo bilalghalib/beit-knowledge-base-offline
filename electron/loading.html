@@ -62,6 +62,31 @@
       font-family: 'Courier New', monospace;
     }
 
+    .progress {
+      margin-top: 20px;
+      font-size: 13px;
+      opacity: 0.9;
+    }
+
+    .progress-item {
+      padding: 6px 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .error-msg {
+      margin-top: 20px;
+      padding: 15px;
+      background: rgba(255, 100, 100, 0.2);
+      border-radius: 8px;
+      font-size: 13px;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
@@ -76,12 +101,94 @@
   <div class="container">
     <div class="logo">🧠</div>
     <h1>BEIT Knowledge Base</h1>
-    <p>Starting application...</p>
-    <div class="spinner"></div>
+    <p id="main-status">Starting application...</p>
+    <div class="spinner" id="spinner"></div>
     <div class="status">
-      <div>⏳ This may take a few moments</div>
-      <div style="margin-top: 8px;">Please wait while we prepare your offline knowledge base</div>
+      <div>⏳ This may take up to 2 minutes on first launch</div>
+      <div style="margin-top: 8px;">Loading models and embeddings...</div>
+    </div>
+
+    <div class="progress" id="progress">
+      <div class="progress-item">
+        <span id="step1">⏳</span> Validating files...
+      </div>
+      <div class="progress-item">
+        <span id="step2">⏳</span> Starting server...
+      </div>
+      <div class="progress-item">
+        <span id="step3">⏳</span> Loading application...
+      </div>
+    </div>
+
+    <div class="error-msg" id="error-msg" style="display: none;">
+      ⚠️ <span id="error-text"></span>
     </div>
   </div>
+
+  <script>
+    let startTime = Date.now();
+    let timeoutId;
+    let elapsedTimer;
+
+    // Show elapsed time
+    function updateElapsedTime() {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const minutes = Math.floor(elapsed / 60);
+      const seconds = elapsed % 60;
+      const timeStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+      document.getElementById('main-status').textContent = `Starting application... (${timeStr} elapsed)`;
+    }
+
+    elapsedTimer = setInterval(updateElapsedTime, 1000);
+
+    // Timeout after 2 minutes
+    timeoutId = setTimeout(() => {
+      clearInterval(elapsedTimer);
+      document.getElementById('spinner').style.display = 'none';
+      document.getElementById('main-status').textContent = 'Startup is taking longer than expected';
+      document.getElementById('error-msg').style.display = 'block';
+      document.getElementById('error-text').innerHTML = `
+        The application has been loading for more than 2 minutes.<br><br>
+        <strong>Possible causes:</strong><br>
+        • Model files are missing or corrupted<br>
+        • Insufficient system memory<br>
+        • Antivirus blocking the application<br><br>
+        <strong>What to do:</strong><br>
+        1. Close this window<br>
+        2. Restart the application<br>
+        3. If problem persists, reinstall the application<br>
+        4. Check if antivirus is blocking the app
+      `;
+
+      // Try to close automatically after showing error
+      setTimeout(() => {
+        if (window.close) {
+          window.close();
+        }
+      }, 15000); // Close after 15 more seconds
+    }, 120000); // 2 minutes
+
+    // Listen for progress updates
+    if (window.electron && window.electron.onLoadingProgress) {
+      window.electron.onLoadingProgress((stage) => {
+        if (stage === 'validating') {
+          document.getElementById('step1').textContent = '✅';
+        } else if (stage === 'server-starting') {
+          document.getElementById('step1').textContent = '✅';
+          document.getElementById('step2').textContent = '🔄';
+        } else if (stage === 'loading-app') {
+          document.getElementById('step1').textContent = '✅';
+          document.getElementById('step2').textContent = '✅';
+          document.getElementById('step3').textContent = '🔄';
+        } else if (stage === 'complete') {
+          document.getElementById('step1').textContent = '✅';
+          document.getElementById('step2').textContent = '✅';
+          document.getElementById('step3').textContent = '✅';
+          clearTimeout(timeoutId);
+          clearInterval(elapsedTimer);
+        }
+      });
+    }
+  </script>
 </body>
 </html>

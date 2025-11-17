@@ -13,8 +13,64 @@ export const runtime = 'nodejs';
  * 2. Transformers.js 1024-dim (offline fallback)
  */
 
-// Configure Transformers.js
-const MODELS_DIR = path.join(process.cwd(), 'models', 'transformers');
+// Configure Transformers.js - try multiple locations
+// In development: project_root/models/transformers
+// In production (standalone): standalone_root/models/transformers
+function findModelsDirectory(): string {
+  console.log('\n╔══════════════════════════════════════════════════════════════╗');
+  console.log('║  🔍 SEARCHING FOR MODELS DIRECTORY                           ║');
+  console.log('╚══════════════════════════════════════════════════════════════╝\n');
+  console.log('📍 Current process.cwd():', process.cwd());
+  console.log('📍 DATA_DIR env var:', process.env.DATA_DIR || '(not set)');
+  console.log('');
+
+  const possiblePaths = [
+    // Development
+    path.join(process.cwd(), 'models', 'transformers'),
+    // Standalone build (same level as server.js)
+    path.join(process.cwd(), '..', '..', 'models', 'transformers'),
+    // Alternative standalone location
+    path.join(process.cwd(), '..', 'models', 'transformers'),
+    // If DATA_DIR is set, use that as base
+    process.env.DATA_DIR ? path.join(path.dirname(process.env.DATA_DIR), 'models', 'transformers') : null,
+  ].filter(Boolean) as string[];
+
+  console.log('🔎 Checking possible model locations:');
+  for (const dir of possiblePaths) {
+    const exists = fs.existsSync(dir);
+    console.log(`   ${exists ? '✅' : '❌'} ${dir}`);
+
+    if (exists) {
+      // List contents to verify
+      try {
+        const contents = fs.readdirSync(dir);
+        console.log(`      Found ${contents.length} items:`);
+        for (const item of contents.slice(0, 5)) {  // Show first 5 items
+          const itemPath = path.join(dir, item);
+          const isDir = fs.statSync(itemPath).isDirectory();
+          console.log(`        ${isDir ? '📁' : '📄'} ${item}`);
+        }
+        if (contents.length > 5) {
+          console.log(`        ... and ${contents.length - 5} more`);
+        }
+      } catch (err) {
+        console.error(`      Error reading directory: ${err}`);
+      }
+
+      console.log(`\n✅ Using models directory: ${dir}\n`);
+      return dir;
+    }
+  }
+
+  // Fallback to default
+  const defaultPath = path.join(process.cwd(), 'models', 'transformers');
+  console.warn(`\n⚠️  WARNING: Models directory not found in any expected location!`);
+  console.warn(`   Falling back to: ${defaultPath}`);
+  console.warn(`   This will likely cause the model to download at runtime\n`);
+  return defaultPath;
+}
+
+const MODELS_DIR = findModelsDirectory();
 transformersEnv.cacheDir = MODELS_DIR;
 transformersEnv.allowLocalModels = true;
 transformersEnv.allowRemoteModels = false;
@@ -38,10 +94,33 @@ function filesExistForSuffix(dataDir: string, suffix: string): boolean {
 }
 
 /**
+ * Find data directory (try multiple locations)
+ */
+function findDataDirectory(): string {
+  const possiblePaths = [
+    // Environment variable
+    process.env.DATA_DIR,
+    // Development
+    path.join(process.cwd(), 'data'),
+    // Standalone build
+    path.join(process.cwd(), '..', '..', 'data'),
+    path.join(process.cwd(), '..', 'data'),
+  ].filter(Boolean) as string[];
+
+  for (const dir of possiblePaths) {
+    if (fs.existsSync(dir)) {
+      return dir;
+    }
+  }
+
+  return path.join(process.cwd(), 'data'); // Fallback
+}
+
+/**
  * Check which embedding files are available
  */
 function checkAvailableEmbeddings(): { has1024: boolean; has3072: boolean; highSuffix: string | null } {
-  const dataDir = process.env.DATA_DIR || path.join(process.cwd(), 'data');
+  const dataDir = findDataDirectory();
   const baseSuffix = '_1024.json';
   const highSuffix = '_3072.json';
   const defaultSuffix = '.json';
@@ -64,7 +143,7 @@ async function loadVectorDB(dimensions: 1024 | 3072) {
   const cache = dimensions === 1024 ? vectorDB1024 : vectorDB3072;
   if (cache) return cache;
 
-  const dataDir = process.env.DATA_DIR || path.join(process.cwd(), 'data');
+  const dataDir = findDataDirectory();
   let suffix = `_${dimensions}.json`;
 
   if (dimensions === 1024) {
@@ -128,18 +207,137 @@ async function loadVectorDB(dimensions: 1024 | 3072) {
  * Initialize Transformers.js model (for 1024-dim fallback)
  */
 async function initializeTransformersModel() {
-  if (transformersExtractor) return transformersExtractor;
+  if (transformersExtractor) {
+    console.log('✅ Using cached Transformers.js model');
+    return transformersExtractor;
+  }
+
+  console.log('\n╔══════════════════════════════════════════════════════════════╗');
+  console.log('║  🤖 INITIALIZING TRANSFORMERS.JS MODEL                       ║');
+  console.log('╚══════════════════════════════════════════════════════════════╝\n');
 
   try {
-    console.log('🤖 Initializing BGE-large (1024-dim)...');
-    transformersExtractor = await pipeline('feature-extraction', 'Xenova/bge-large-en-v1.5', {
+    const startTime = Date.now();
+
+    console.log('📊 Configuration:');
+    console.log('   • Model: Xenova/bge-large-en-v1.5');
+    console.log('   • Quantized: true');
+    console.log('   • Cache dir:', MODELS_DIR);
+    console.log('   • Allow local models:', transformersEnv.allowLocalModels);
+    console.log('   • Allow remote models:', transformersEnv.allowRemoteModels);
+    console.log('');
+
+    console.log('📁 Checking models directory:');
+    const dirExists = fs.existsSync(MODELS_DIR);
+    console.log(`   • Directory exists: ${dirExists ? '✅ Yes' : '❌ No'}`);
+
+    if (dirExists) {
+      // List all items in models directory
+      const items = fs.readdirSync(MODELS_DIR);
+      console.log(`   • Items in directory: ${items.length}`);
+
+      for (const item of items) {
+        const itemPath = path.join(MODELS_DIR, item);
+        const stats = fs.statSync(itemPath);
+        const isDir = stats.isDirectory();
+
+        if (isDir) {
+          // Count files in subdirectory
+          const subItems = fs.readdirSync(itemPath);
+          const totalSize = subItems.reduce((acc, subItem) => {
+            try {
+              const subPath = path.join(itemPath, subItem);
+              const subStats = fs.statSync(subPath);
+              return acc + (subStats.isDirectory() ? 0 : subStats.size);
+            } catch {
+              return acc;
+            }
+          }, 0);
+          const sizeMB = (totalSize / 1024 / 1024).toFixed(2);
+          console.log(`     📁 ${item}/ (${subItems.length} items, ${sizeMB} MB)`);
+        } else {
+          const sizeMB = (stats.size / 1024 / 1024).toFixed(2);
+          console.log(`     📄 ${item} (${sizeMB} MB)`);
+        }
+      }
+
+      // Check for expected BGE model
+      const expectedModelDir = path.join(MODELS_DIR, 'models--Xenova--bge-large-en-v1.5');
+      const modelExists = fs.existsSync(expectedModelDir);
+      console.log('');
+      console.log(`   • BGE model directory: ${modelExists ? '✅ Found' : '❌ Not found'}`);
+      if (modelExists) {
+        const modelFiles = fs.readdirSync(expectedModelDir);
+        console.log(`   • Model files: ${modelFiles.length} items`);
+        const hasOnnx = modelFiles.some(f => f.includes('onnx'));
+        const hasConfig = modelFiles.some(f => f.includes('config'));
+        const hasTokenizer = modelFiles.some(f => f.includes('tokenizer'));
+        console.log(`     - ONNX model: ${hasOnnx ? '✅' : '❌'}`);
+        console.log(`     - Config: ${hasConfig ? '✅' : '❌'}`);
+        console.log(`     - Tokenizer: ${hasTokenizer ? '✅' : '❌'}`);
+      }
+    } else {
+      console.error(`   ❌ Models directory NOT FOUND: ${MODELS_DIR}`);
+      console.error(`   ⚠️  Model will need to be downloaded at runtime!`);
+    }
+
+    console.log('');
+    console.log('⏳ Loading model pipeline (timeout: 30s)...');
+
+    // Add timeout to prevent hanging forever
+    const timeoutMs = 30000; // 30 seconds
+    const modelPromise = pipeline('feature-extraction', 'Xenova/bge-large-en-v1.5', {
       quantized: true,
     });
-    console.log('✅ Transformers.js model loaded');
+
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => {
+        console.error('❌ MODEL LOADING TIMEOUT!');
+        console.error('   The model took longer than 30 seconds to load');
+        console.error('   This usually means:');
+        console.error('   1. Model files are missing (attempting download)');
+        console.error('   2. Model files are corrupted');
+        console.error('   3. Insufficient system resources');
+        reject(new Error(`Model loading timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+    });
+
+    transformersExtractor = await Promise.race([modelPromise, timeoutPromise]);
+
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+    console.log(`\n✅ Transformers.js model loaded successfully in ${duration}s\n`);
+
     return transformersExtractor;
   } catch (error) {
-    console.error('❌ Failed to load Transformers.js:', error);
-    throw new Error('Transformers.js model not available');
+    console.error('\n╔══════════════════════════════════════════════════════════════╗');
+    console.error('║  ❌ TRANSFORMERS.JS MODEL FAILED TO LOAD                     ║');
+    console.error('╚══════════════════════════════════════════════════════════════╝\n');
+
+    console.error('Error details:', error);
+    console.error('');
+    console.error('📁 Diagnostics:');
+    console.error(`   • Models directory: ${MODELS_DIR}`);
+    console.error(`   • Directory exists: ${fs.existsSync(MODELS_DIR)}`);
+
+    if (fs.existsSync(MODELS_DIR)) {
+      try {
+        const files = fs.readdirSync(MODELS_DIR);
+        console.error(`   • Files in directory (${files.length}):`);
+        files.forEach(f => console.error(`     - ${f}`));
+      } catch (readErr) {
+        console.error(`   • Error reading directory: ${readErr}`);
+      }
+    }
+
+    console.error('');
+    console.error('💡 Possible solutions:');
+    console.error('   1. Run: npm run download-transformers-model');
+    console.error('   2. Rebuild the app: npm run build');
+    console.error('   3. Check if antivirus is blocking model files');
+    console.error('   4. Reinstall the application');
+    console.error('');
+
+    throw new Error(`Transformers.js model not available: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 

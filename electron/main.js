@@ -33,17 +33,35 @@ async function checkService(url, serviceName) {
 async function checkDependencies() {
   const issues = [];
 
+  console.log('╔══════════════════════════════════════════════════════════════╗');
+  console.log('║  🔍 STARTUP VALIDATION - COMPREHENSIVE LOGGING               ║');
+  console.log('╚══════════════════════════════════════════════════════════════╝\n');
+
   try {
     // Determine base path based on whether app is packaged
     const basePath = app.isPackaged
       ? path.join(process.resourcesPath, 'app')
       : app.getAppPath();
 
-    console.log('🔍 Validating installation from:', basePath);
+    console.log('📍 Environment Information:');
+    console.log(`   • Platform: ${process.platform}`);
+    console.log(`   • Architecture: ${process.arch}`);
+    console.log(`   • Node version: ${process.version}`);
+    console.log(`   • Electron version: ${process.versions.electron}`);
+    console.log(`   • Is packaged: ${app.isPackaged}`);
+    console.log(`   • App path: ${app.getAppPath()}`);
+    console.log(`   • Resources path: ${app.isPackaged ? process.resourcesPath : 'N/A (dev mode)'}`);
+    console.log(`   • Current working dir: ${process.cwd()}`);
+    console.log(`   • Base path: ${basePath}`);
+    console.log('');
 
     // Check data directory exists
+    console.log('📦 STEP 1: Validating data directory...');
     const dataDir = path.join(basePath, 'data');
+    console.log(`   Looking for: ${dataDir}`);
+
     if (!fs.existsSync(dataDir)) {
+      console.error('   ❌ Data directory NOT FOUND');
       issues.push({
         severity: 'critical',
         message: 'Data directory is missing',
@@ -51,7 +69,20 @@ async function checkDependencies() {
         fix: 'Reinstall the application. The data directory was not bundled correctly.'
       });
     } else {
+      console.log('   ✅ Data directory exists');
+
+      // List all files in data directory
+      const allFiles = fs.readdirSync(dataDir);
+      console.log(`   Found ${allFiles.length} files in data directory:`);
+      for (const file of allFiles) {
+        const filePath = path.join(dataDir, file);
+        const stats = fs.statSync(filePath);
+        const sizeMB = (stats.size / 1024 / 1024).toFixed(2);
+        console.log(`     • ${file}: ${sizeMB} MB`);
+      }
+
       // Check individual embedding files
+      console.log('\n   🔍 Checking required embedding files:');
       const requiredDataFiles = [
         'insights_embedded_1024.json',
         'curriculum_embedded_1024.json',
@@ -61,6 +92,7 @@ async function checkDependencies() {
       for (const file of requiredDataFiles) {
         const filePath = path.join(dataDir, file);
         if (!fs.existsSync(filePath)) {
+          console.error(`   ❌ Missing: ${file}`);
           issues.push({
             severity: 'critical',
             message: `Missing required embedding file: ${file}`,
@@ -71,6 +103,7 @@ async function checkDependencies() {
           // Check file size (should be > 100KB)
           const stats = fs.statSync(filePath);
           if (stats.size < 100000) {
+            console.error(`   ❌ Too small (corrupted?): ${file} (${stats.size} bytes)`);
             issues.push({
               severity: 'critical',
               message: `Embedding file is too small (corrupted?): ${file}`,
@@ -78,35 +111,143 @@ async function checkDependencies() {
               fix: 'File may be corrupted. Reinstall the application.'
             });
           } else {
-            console.log(`✅ ${file}: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
+            console.log(`   ✅ ${file}: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
           }
         }
       }
     }
+    console.log('');
 
     // Check models directory
+    console.log('📦 STEP 2: Validating models directory...');
+    const modelsRootDir = path.join(basePath, 'models');
     const modelsDir = path.join(basePath, 'models', 'transformers');
-    if (!fs.existsSync(modelsDir)) {
+    console.log(`   Looking for: ${modelsDir}`);
+
+    // First check if models root exists
+    if (!fs.existsSync(modelsRootDir)) {
+      console.error('   ❌ Models root directory NOT FOUND');
       issues.push({
         severity: 'critical',
-        message: 'Transformers.js models directory is missing',
-        path: modelsDir,
+        message: 'Models directory is missing entirely',
+        path: modelsRootDir,
         fix: 'Reinstall the application or run: npm run download-transformers-model'
       });
     } else {
-      // Check for BGE model
-      const modelPath = path.join(modelsDir, 'models--Xenova--bge-large-en-v1.5');
-      if (!fs.existsSync(modelPath)) {
+      console.log('   ✅ Models root directory exists');
+
+      // List what's in models directory
+      const modelsRootContents = fs.readdirSync(modelsRootDir);
+      console.log(`   Found ${modelsRootContents.length} items in models/:`);
+      for (const item of modelsRootContents) {
+        const itemPath = path.join(modelsRootDir, item);
+        const isDir = fs.statSync(itemPath).isDirectory();
+        console.log(`     ${isDir ? '📁' : '📄'} ${item}`);
+      }
+
+      // Check transformers subdirectory
+      if (!fs.existsSync(modelsDir)) {
+        console.error('\n   ❌ models/transformers/ subdirectory NOT FOUND');
         issues.push({
           severity: 'critical',
-          message: 'BGE-large-en-v1.5 model is missing',
-          path: modelPath,
-          fix: 'Model not found. Run: npm run download-transformers-model'
+          message: 'Transformers.js models directory is missing',
+          path: modelsDir,
+          fix: 'Reinstall the application or run: npm run download-transformers-model'
         });
       } else {
-        console.log('✅ BGE model found');
+        console.log('\n   ✅ models/transformers/ subdirectory exists');
+
+        // List transformers directory contents
+        const transformersContents = fs.readdirSync(modelsDir);
+        console.log(`   Found ${transformersContents.length} items in models/transformers/:`);
+
+        // Calculate total size
+        const getDirectorySize = (dirPath) => {
+          let size = 0;
+          try {
+            const items = fs.readdirSync(dirPath);
+            for (const item of items) {
+              const itemPath = path.join(dirPath, item);
+              const stats = fs.statSync(itemPath);
+              if (stats.isDirectory()) {
+                size += getDirectorySize(itemPath);
+              } else {
+                size += stats.size;
+              }
+            }
+          } catch (err) {
+            console.error(`     Error reading ${dirPath}: ${err.message}`);
+          }
+          return size;
+        };
+
+        for (const item of transformersContents) {
+          const itemPath = path.join(modelsDir, item);
+          const isDir = fs.statSync(itemPath).isDirectory();
+          if (isDir) {
+            const size = getDirectorySize(itemPath);
+            const sizeMB = (size / 1024 / 1024).toFixed(2);
+            console.log(`     📁 ${item}/ (${sizeMB} MB)`);
+          } else {
+            const stats = fs.statSync(itemPath);
+            const sizeMB = (stats.size / 1024 / 1024).toFixed(2);
+            console.log(`     📄 ${item} (${sizeMB} MB)`);
+          }
+        }
+
+        const totalSize = getDirectorySize(modelsDir);
+        const totalSizeMB = (totalSize / 1024 / 1024).toFixed(2);
+        console.log(`\n   📊 Total models size: ${totalSizeMB} MB`);
+
+        // Check for BGE model specifically
+        console.log('\n   🔍 Looking for BGE model:');
+        const modelPath = path.join(modelsDir, 'models--Xenova--bge-large-en-v1.5');
+        console.log(`   Expected path: ${modelPath}`);
+
+        if (!fs.existsSync(modelPath)) {
+          console.error('   ❌ BGE model directory NOT FOUND');
+
+          // Check for alternative structures
+          const possibleModels = transformersContents.filter(item =>
+            item.includes('bge') || item.includes('Xenova') || item.startsWith('models--')
+          );
+
+          if (possibleModels.length > 0) {
+            console.log('   ⚠️  Found alternative model structures:');
+            for (const model of possibleModels) {
+              console.log(`     • ${model}`);
+            }
+          }
+
+          // Only add as critical issue if total size is small
+          if (totalSize < 100 * 1024 * 1024) {  // Less than 100MB
+            console.error(`   ⚠️  CRITICAL: Total size (${totalSizeMB} MB) < expected (300-500 MB)`);
+            issues.push({
+              severity: 'critical',
+              message: 'BGE-large-en-v1.5 model is missing or incomplete',
+              path: modelPath,
+              fix: 'Model not found. Run: npm run download-transformers-model'
+            });
+          } else {
+            console.log('   ⚠️  Model structure differs from expected, but size looks OK');
+          }
+        } else {
+          console.log('   ✅ BGE model directory found');
+
+          // List model files
+          const modelFiles = fs.readdirSync(modelPath);
+          console.log(`   Model contains ${modelFiles.length} items`);
+
+          // Check for key files
+          const keyFiles = ['onnx', 'tokenizer.json', 'config.json'];
+          for (const key of keyFiles) {
+            const found = modelFiles.some(f => f.includes(key));
+            console.log(`     ${found ? '✅' : '❌'} ${key}: ${found ? 'Found' : 'Missing'}`);
+          }
+        }
       }
     }
+    console.log('');
 
     // Check .next/standalone directory in packaged app
     if (app.isPackaged) {
@@ -124,27 +265,67 @@ async function checkDependencies() {
     }
 
     // Memory check (warn if low)
+    console.log('💾 STEP 3: Checking system resources...');
     const totalMem = require('os').totalmem();
     const freeMem = require('os').freemem();
     const totalGB = (totalMem / 1024 / 1024 / 1024).toFixed(2);
     const freeGB = (freeMem / 1024 / 1024 / 1024).toFixed(2);
 
-    console.log(`💾 System memory: ${freeGB}GB free / ${totalGB}GB total`);
+    console.log(`   • Total memory: ${totalGB} GB`);
+    console.log(`   • Free memory: ${freeGB} GB`);
 
     if (freeMem < 1 * 1024 * 1024 * 1024) { // Less than 1GB free
+      console.warn(`   ⚠️  Low memory warning: ${freeGB} GB free`);
       issues.push({
         severity: 'warning',
         message: `Low system memory: ${freeGB}GB free`,
         fix: 'Close other applications to free up memory'
       });
+    } else {
+      console.log('   ✅ Sufficient memory available');
     }
+    console.log('');
 
   } catch (error) {
+    console.error('❌ Validation error:', error);
     issues.push({
       severity: 'critical',
       message: `Validation failed: ${error.message}`,
       fix: 'Contact support with this error message'
     });
+  }
+
+  // Summary
+  console.log('╔══════════════════════════════════════════════════════════════╗');
+  console.log('║  📊 VALIDATION SUMMARY                                       ║');
+  console.log('╚══════════════════════════════════════════════════════════════╝');
+
+  const criticalCount = issues.filter(i => i.severity === 'critical').length;
+  const warningCount = issues.filter(i => i.severity === 'warning').length;
+
+  if (issues.length === 0) {
+    console.log('\n✅ All validation checks passed! App ready to start.\n');
+  } else {
+    console.log(`\nFound ${criticalCount} critical issue(s) and ${warningCount} warning(s)\n`);
+
+    if (criticalCount > 0) {
+      console.error('🔴 CRITICAL ISSUES:');
+      issues.filter(i => i.severity === 'critical').forEach((issue, idx) => {
+        console.error(`  ${idx + 1}. ${issue.message}`);
+        console.error(`     Path: ${issue.path || 'N/A'}`);
+        console.error(`     Fix: ${issue.fix}`);
+      });
+      console.log('');
+    }
+
+    if (warningCount > 0) {
+      console.warn('⚠️  WARNINGS:');
+      issues.filter(i => i.severity === 'warning').forEach((issue, idx) => {
+        console.warn(`  ${idx + 1}. ${issue.message}`);
+        console.warn(`     Fix: ${issue.fix}`);
+      });
+      console.log('');
+    }
   }
 
   return issues;
