@@ -26,4 +26,9 @@ contextBridge.exposeInMainWorld('electron', {
   onCriticalStartupError: (callback) => {
     ipcRenderer.on('critical-startup-error', (event, data) => callback(data));
   },
+
+  // Listen for loading progress
+  onLoadingProgress: (callback) => {
+    ipcRenderer.on('loading-progress', (event, stage) => callback(stage));
+  },
 });
