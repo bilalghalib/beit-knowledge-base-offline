@@ -18,6 +18,7 @@
     "download-onnx-model": "node scripts/download-onnx-model.js",
     "download-transformers-model": "node scripts/download-transformers-model.js",
     "verify": "node scripts/verify-build-prerequisites.js",
+    "validate": "node scripts/validate-build.js",
     "test-setup": "node scripts/test-setup.js",
     "electron": "electron .",
     "electron:dev": "electron .",
